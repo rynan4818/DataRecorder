@@ -1,6 +1,7 @@
 ﻿using DataRecorder.Enums;
 using DataRecorder.Interfaces;
 using DataRecorder.Util;
+using BS_Utils.Gameplay;
 using IPA.Utilities;
 using System;
 using System.Collections.Concurrent;
@@ -14,12 +15,13 @@ using Zenject;
 
 namespace DataRecorder.Models
 {
-    /// <summary>
-    /// ゲーム中のスコアを記録するクラスです。
-    /// 初期化と破棄はZenjectがいい感じにやってくれます。
-    /// </summary>
-    public class ScoreManager : MonoBehaviour, IInitializable, IDisposable
-    {
+	/// <summary>
+	/// ゲーム中のスコアを記録するクラスです。
+	/// 初期化と破棄はZenjectがいい感じにやってくれます。
+	/// </summary>
+	// public class ScoreManager : MonoBehaviour, IInitializable, IDisposable
+	public class ScoreManager : IInitializable, IDisposable
+	{
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // プロパティ
         #endregion
@@ -77,18 +79,18 @@ namespace DataRecorder.Models
         }
 
 		#region UnityMessage
-		private void Update()
-		{
-			if (!headInObstacle && currentHeadInObstacle) {
-				headInObstacle = true;
-				this.OnStatusUpdated(BeatSaberEvent.ObstacleEnter);
-			}
-			else if (headInObstacle && !currentHeadInObstacle) {
-				headInObstacle = false;
-
-				this.OnStatusUpdated(BeatSaberEvent.ObstacleExit);
-			}
-		}
+		//private void Update()
+		//{
+		//	if (!headInObstacle && currentHeadInObstacle) {
+		//		headInObstacle = true;
+		//		this.OnStatusUpdated(BeatSaberEvent.ObstacleEnter);
+		//	}
+		//	else if (headInObstacle && !currentHeadInObstacle) {
+		//		headInObstacle = false;
+		//
+		//		this.OnStatusUpdated(BeatSaberEvent.ObstacleExit);
+		//	}
+		//}
 		#endregion
 		//public void OnMultiplayerStateChanged(MultiplayerController.State state)
 		//{
@@ -211,25 +213,25 @@ namespace DataRecorder.Models
 
 			gameStatus.ResetNoteCut();
 
-			// Backwards compatibility for <1.12.1
-			gameStatus.noteID = -1;
-			// Check the near notes first for performance
-			for (int i = Math.Max(0, lastNoteId - 10); i < noteToIdMapping.Length; i++) {
-				if (Utility.NoteDataEquals(noteToIdMapping[i], noteData)) {
-					gameStatus.noteID = i;
-					if (i > lastNoteId) lastNoteId = i;
-					break;
-				}
-			}
-			// If that failed, check the rest of the notes in reverse order
-			if (gameStatus.noteID == -1) {
-				for (int i = Math.Max(0, lastNoteId - 11); i >= 0; i--) {
-					if (Utility.NoteDataEquals(noteToIdMapping[i], noteData)) {
-						gameStatus.noteID = i;
-						break;
-					}
-				}
-			}
+			// // Backwards compatibility for <1.12.1
+			// gameStatus.noteID = -1;
+			// // Check the near notes first for performance
+			// for (int i = Math.Max(0, lastNoteId - 10); i < noteToIdMapping.Length; i++) {
+			// 	if (Utility.NoteDataEquals(noteToIdMapping[i], noteData)) {
+			// 		gameStatus.noteID = i;
+			// 		if (i > lastNoteId) lastNoteId = i;
+			// 		break;
+			// 	}
+			// }
+			// // If that failed, check the rest of the notes in reverse order
+			// if (gameStatus.noteID == -1) {
+			// 	for (int i = Math.Max(0, lastNoteId - 11); i >= 0; i--) {
+			//	 	if (Utility.NoteDataEquals(noteToIdMapping[i], noteData)) {
+			//	 		gameStatus.noteID = i;
+			//	 		break;
+			// 		}
+			//	 }
+			// }
 
 			// Backwards compatibility for <1.12.1
 			gameStatus.noteType = noteData.colorType == ColorType.None ? "Bomb" : noteData.colorType == ColorType.ColorA ? "NoteA" : noteData.colorType == ColorType.ColorB ? "NoteB" : noteData.colorType.ToString();
@@ -356,8 +358,8 @@ namespace DataRecorder.Models
 		/// Beat Saber 1.12.1 removes NoteData.id, forcing us to generate our own note IDs to allow users to easily link events about the same note.
 		/// Before 1.12.1 the noteID matched the note order in the beatmap file, but this is impossible to replicate now without hooking into the level loading code.
 		/// </summary>
-		private NoteData[] noteToIdMapping = null;
-		private int lastNoteId = 0;
+		// private NoteData[] noteToIdMapping = null;
+		// private int lastNoteId = 0;
 
 		/// private PlayerHeadAndObstacleInteraction ScoreController._playerHeadAndObstacleInteraction;
 		private FieldInfo scoreControllerHeadAndObstacleInteractionField = typeof(ScoreController).GetField("_playerHeadAndObstacleInteraction", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -370,8 +372,8 @@ namespace DataRecorder.Models
 		/// private static LevelCompletionResults.Rank LevelCompletionResults.GetRankForScore(int score, int maxPossibleScore)
 		private MethodInfo getRankForScoreMethod = typeof(LevelCompletionResults).GetMethod("GetRankForScore", BindingFlags.NonPublic | BindingFlags.Static);
 
-		private bool currentHeadInObstacle = false;
-		private bool headInObstacle = false;
+		// private bool currentHeadInObstacle = false;
+		// private bool headInObstacle = false;
 
 		[Inject]
         private IRepository _repository;
@@ -388,7 +390,7 @@ namespace DataRecorder.Models
         private void Constractor(DiContainer container)
         {
             try {
-                gameplayCoreSceneSetupData = container.Resolve<GameplayCoreSceneSetupData>();
+                // gameplayCoreSceneSetupData = container.Resolve<GameplayCoreSceneSetupData>();  ここ不要？
                 pauseController = container.Resolve<PauseController>();
                 scoreController = container.Resolve<ScoreController>();
                 gameplayModifiers = container.Resolve<GameplayModifiers>();
@@ -403,18 +405,135 @@ namespace DataRecorder.Models
                 Logger.Error(e);
                 return;
             }
-            // TODO:各種イベントの追加
+			Logger.Info("0");
+			_gameStatus.scene = "Song";
 
-        }
+			// TODO:各種イベントの追加
+			// FIXME: 曲が終わったときには、このすべての参照先をきれいにしておく必要があります。(FIXME: i should probably clean references to all this when song is over)
+			Logger.Info("1");
+			gameplayCoreSceneSetupData = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData;
 
-        /// <summary>
-        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
-        /// </summary>
-        public void Initialize()
-        {
-			if (playerHeadAndObstacleInteraction != null) {
-				currentHeadInObstacle = playerHeadAndObstacleInteraction.intersectingObstacles.Any();
+			Logger.Info("2");
+			Logger.Info("scoreController=" + scoreController);
+
+			// イベントリスナーの登録 (Register event listeners)
+			// マルチプレイヤーでは PauseController が存在しない (PauseController doesn't exist in multiplayer)
+			if (pauseController != null) {
+				Logger.Info("pauseController=" + pauseController);
+				// public event Action PauseController#didPauseEvent;
+				pauseController.didPauseEvent += this.OnGamePause;
+				// public event Action PauseController#didResumeEvent;
+				pauseController.didResumeEvent += this.OnGameResume;
 			}
+			// public ScoreController#noteWasCutEvent<NoteData, NoteCutInfo, int multiplier> // AfterCutScoreBufferが作成された後に呼び出される (called after AfterCutScoreBuffer is created)
+			scoreController.noteWasCutEvent += this.OnNoteWasCut;
+			// public ScoreController#noteWasMissedEvent<NoteData, int multiplier>
+			scoreController.noteWasMissedEvent += this.OnNoteWasMissed;
+			// public ScoreController#scoreDidChangeEvent<int, int> // score
+			scoreController.scoreDidChangeEvent += this.OnScoreDidChange;
+			// public ScoreController#comboDidChangeEvent<int> // combo
+			scoreController.comboDidChangeEvent += this.OnComboDidChange;
+			// public ScoreController#multiplierDidChangeEvent<int, float> // multiplier, progress [0..1]
+			scoreController.multiplierDidChangeEvent += this.OnMultiplierDidChange;
+			Logger.Info("2.5");
+			// public event Action<BeatmapEventData> BeatmapObjectCallbackController#beatmapEventDidTriggerEvent
+			beatmapObjectCallbackController.beatmapEventDidTriggerEvent += this.OnBeatmapEventDidTrigger;
+			// public event Action GameSongController#songDidFinishEvent;
+			gameSongController.songDidFinishEvent += this.OnLevelFinished;
+			// public event Action GameEnergyCounter#gameEnergyDidReach0Event;
+			gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
+			gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
+			Logger.Info("3");
+
+			IDifficultyBeatmap diff = gameplayCoreSceneSetupData.difficultyBeatmap;
+			IBeatmapLevel level = diff.level;
+
+			_gameStatus.partyMode = Gamemode.IsPartyActive;
+			_gameStatus.mode = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
+
+			gameplayModifiers = gameplayCoreSceneSetupData.gameplayModifiers;
+			PlayerSpecificSettings playerSettings = gameplayCoreSceneSetupData.playerSpecificSettings;
+			PracticeSettings practiceSettings = gameplayCoreSceneSetupData.practiceSettings;
+
+			float songSpeedMul = gameplayModifiers.songSpeedMul;
+			if (practiceSettings != null) songSpeedMul = practiceSettings.songSpeedMul;
+			float modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers);
+			Logger.Info("4");
+
+			// <1.12.1>との下位互換性のため、NoteDataからidへのマッピングを生成 (Generate NoteData to id mappings for backwards compatiblity with <1.12.1)
+			// noteToIdMapping.Clear();
+
+			// lastNoteId = 0;
+			// Logger.Info("4.1");
+			// foreach (var note in diff.beatmapData.beatmapObjectsData.Where(x => x is NoteData).Select((x, i) => new { note = x, index = i }))
+			// {
+			// 	this.noteToIdMapping.TryAdd(new NoteDataEntity(note.note as NoteData, this.gameplayModifiers.noArrows), note.index);
+			// }
+			// Logger.Info("5");
+
+			_gameStatus.songName = level.songName;
+			_gameStatus.songSubName = level.songSubName;
+			_gameStatus.songAuthorName = level.songAuthorName;
+			_gameStatus.levelAuthorName = level.levelAuthorName;
+			_gameStatus.songBPM = level.beatsPerMinute;
+			_gameStatus.noteJumpSpeed = diff.noteJumpMovementSpeed;
+			// 13は "custom_level_"、40はSHA-1ハッシュの長さを表すマジックナンバーです。(13 is "custom_level_" and 40 is the magic number for the length of the SHA-1 hash)
+			_gameStatus.songHash = level.levelID.StartsWith("custom_level_") && !level.levelID.EndsWith(" WIP") ? level.levelID.Substring(13, 40) : null;
+			_gameStatus.levelId = level.levelID;
+			_gameStatus.songTimeOffset = (long)(level.songTimeOffset * 1000f / songSpeedMul);
+			_gameStatus.length = (long)(level.beatmapLevelData.audioClip.length * 1000f / songSpeedMul);
+			_gameStatus.start = Utility.GetCurrentTime() - (long)(audioTimeSyncController.songTime * 1000f / songSpeedMul);
+			if (practiceSettings != null) _gameStatus.start -= (long)(practiceSettings.startSongTime * 1000f / songSpeedMul);
+			_gameStatus.paused = 0;
+			_gameStatus.difficulty = diff.difficulty.Name();
+			_gameStatus.notesCount = diff.beatmapData.cuttableNotesType;
+			_gameStatus.bombsCount = diff.beatmapData.bombsCount;
+			_gameStatus.obstaclesCount = diff.beatmapData.obstaclesCount;
+			_gameStatus.environmentName = level.environmentInfo.sceneInfo.sceneName;
+
+			_gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(diff.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO);
+			_gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO).ToString();
+			Logger.Info("6");
+
+			_gameStatus.ResetPerformance();
+
+			_gameStatus.modifierMultiplier = modifierMultiplier;
+			_gameStatus.songSpeedMultiplier = songSpeedMul;
+			_gameStatus.batteryLives = gameEnergyCounter.batteryLives;
+
+			_gameStatus.modObstacles = gameplayModifiers.enabledObstacleType.ToString();
+			_gameStatus.modInstaFail = gameplayModifiers.instaFail;
+			_gameStatus.modNoFail = gameplayModifiers.noFail;
+			_gameStatus.modBatteryEnergy = gameplayModifiers.energyType == GameplayModifiers.EnergyType.Battery;
+			_gameStatus.modDisappearingArrows = gameplayModifiers.disappearingArrows;
+			_gameStatus.modNoBombs = gameplayModifiers.noBombs;
+			_gameStatus.modSongSpeed = gameplayModifiers.songSpeed.ToString();
+			_gameStatus.modNoArrows = gameplayModifiers.noArrows;
+			_gameStatus.modGhostNotes = gameplayModifiers.ghostNotes;
+			_gameStatus.modFailOnSaberClash = gameplayModifiers.failOnSaberClash;
+			_gameStatus.modStrictAngles = gameplayModifiers.strictAngles;
+			_gameStatus.modFastNotes = gameplayModifiers.fastNotes;
+
+			_gameStatus.staticLights = playerSettings.staticLights;
+			_gameStatus.leftHanded = playerSettings.leftHanded;
+			_gameStatus.playerHeight = playerSettings.playerHeight;
+			_gameStatus.sfxVolume = playerSettings.sfxVolume;
+			_gameStatus.reduceDebris = playerSettings.reduceDebris;
+			_gameStatus.noHUD = playerSettings.noTextsAndHuds;
+			_gameStatus.advancedHUD = playerSettings.advancedHud;
+			_gameStatus.autoRestart = playerSettings.autoRestart;
+			Logger.Info("8");
+			this.OnStatusUpdated(BeatSaberEvent.SongStart);
+		}
+
+		/// <summary>
+		/// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
+		/// </summary>
+		public void Initialize()
+        {
+			// if (playerHeadAndObstacleInteraction != null) {
+			// 	currentHeadInObstacle = playerHeadAndObstacleInteraction.intersectingObstacles.Any();
+			// }
 		}
 
         /// <summary>
