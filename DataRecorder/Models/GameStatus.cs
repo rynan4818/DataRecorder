@@ -8,8 +8,6 @@ namespace DataRecorder.Models
     /// </summary>
     public class GameStatus
     {
-        public string updateCause;
-
         public string scene = "Menu";
         public bool partyMode = false;
         public string mode = null;
@@ -19,7 +17,6 @@ namespace DataRecorder.Models
         public string songSubName = null;
         public string songAuthorName = null;
         public string levelAuthorName = null;
-        public string songCover = null;
         public string songHash = null;
         public string levelId = null;
         public float songBPM;
@@ -111,17 +108,12 @@ namespace DataRecorder.Models
         public bool advancedHUD = false;
         public bool autoRestart = false;
 
-        // Beatmap event
-        public int beatmapEventType = 0;
-        public int beatmapEventValue = 0;
-
         public void ResetMapInfo()
         {
             this.songName = null;
             this.songSubName = null;
             this.songAuthorName = null;
             this.levelAuthorName = null;
-            this.songCover = null;
             this.songHash = null;
             this.levelId = null;
             this.songBPM = 0f;
