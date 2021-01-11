@@ -346,7 +346,7 @@ namespace DataRecorder.Models
             }
 			Logger.Info("0");
 
-			// TODO:各種イベントの追加
+			//各種イベントの追加
 			// FIXME: 曲が終わったときには、このすべての参照先をきれいにしておく必要があります。(FIXME: i should probably clean references to all this when song is over)
 			gameplayCoreSceneSetupData = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData;
 
@@ -468,10 +468,9 @@ namespace DataRecorder.Models
             if (!disposedValue) {
                 if (disposing) {
                     // TODO: マネージド状態を破棄します (マネージド オブジェクト)
-                    this._repository?.Dispose();
+                    // this._repository?.Dispose();
 
-					//TODO: 各種イベントの削除
-
+					//各種イベントの削除
 					Logger.Debug("dispose call");
 					try {
 						this._gameStatus.scene = "Menu"; // XXX: multiplayerController は常にこの前にクリーンアップされているので不可能(XXX: impossible because multiplayerController is always cleaned up before this)
