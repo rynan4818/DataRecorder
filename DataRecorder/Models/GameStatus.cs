@@ -8,105 +8,387 @@ namespace DataRecorder.Models
     /// </summary>
     public class GameStatus
     {
-        public string scene = "Menu";
-        public bool partyMode = false;
-        public string mode = null;
+        // プロパティ
+        /// <summary>
+        /// StatusObject[Game] mode : パーティモード
+        /// </summary>
+        public bool partyMode { get; set; } = false;
 
-        // Beatmap
-        public string songName = null;
-        public string songSubName = null;
-        public string songAuthorName = null;
-        public string levelAuthorName = null;
-        public string songHash = null;
-        public string levelId = null;
-        public float songBPM;
-        public float noteJumpSpeed;
-        public long songTimeOffset = 0;
-        public long length = 0;
-        public long start = 0;
-        public long paused = 0;
-        public string difficulty = null;
-        public int notesCount = 0;
-        public int bombsCount = 0;
-        public int obstaclesCount = 0;
-        public int maxScore = 0;
-        public string maxRank = "E";
-        public string environmentName = null;
+        /// <summary>
+        /// StatusObject[Game] mode : ゲームモード
+        /// </summary>
+        public string mode { get; set; } = null;
 
-        // Performance
-        public int score = 0;
-        public int currentMaxScore = 0;
-        public string rank = "E";
-        public int passedNotes = 0;
-        public int hitNotes = 0;
-        public int missedNotes = 0;
-        public int lastNoteScore = 0;
-        public int passedBombs = 0;
-        public int hitBombs = 0;
-        public int combo = 0;
-        public int maxCombo = 0;
-        public int multiplier = 0;
-        public float multiplierProgress = 0;
-        public int batteryEnergy = 1;
-        public float energy = 0;
+        /// <summary>
+        /// StatusObject[BeatMap] 曲名
+        /// </summary>
+        public string songName { get; set; } = null;
 
-        // Note cut
-        public int noteID = -1;
-        public string noteType = null;
-        public string noteCutDirection = null;
-        public int noteLine = 0;
-        public int noteLayer = 0;
-        public bool speedOK = false;
-        public bool directionOK = false;
-        public bool saberTypeOK = false;
-        public bool wasCutTooSoon = false;
-        public int initialScore = -1;
-        public int finalScore = -1;
-        public int cutDistanceScore = -1;
-        public int cutMultiplier = 0;
-        public float saberSpeed = 0;
-        public float saberDirX = 0;
-        public float saberDirY = 0;
-        public float saberDirZ = 0;
-        public string saberType = null;
-        public float swingRating = 0;
-        public float timeDeviation = 0;
-        public float cutDirectionDeviation = 0;
-        public float cutPointX = 0;
-        public float cutPointY = 0;
-        public float cutPointZ = 0;
-        public float cutNormalX = 0;
-        public float cutNormalY = 0;
-        public float cutNormalZ = 0;
-        public float cutDistanceToCenter = 0;
-        public float timeToNextBasicNote = 0;
+        /// <summary>
+        /// StatusObject[BeatMap] 曲のサブタイトル
+        /// </summary>
+        public string songSubName { get; set; } = null;
 
-        // Mods
-        public float modifierMultiplier = 1f;
-        public string modObstacles = "All";
-        public bool modInstaFail = false;
-        public bool modNoFail = false;
-        public bool modBatteryEnergy = false;
-        public int batteryLives = 1;
-        public bool modDisappearingArrows = false;
-        public bool modNoBombs = false;
-        public string modSongSpeed = "Normal";
-        public float songSpeedMultiplier = 1f;
-        public bool modNoArrows = false;
-        public bool modGhostNotes = false;
-        public bool modFailOnSaberClash = false;
-        public bool modStrictAngles = false;
-        public bool modFastNotes = false;
+        /// <summary>
+        /// StatusObject[BeatMap] 曲の作者
+        /// </summary>
+        public string songAuthorName { get; set; } = null;
 
-        // Player settings
-        public bool staticLights = false;
-        public bool leftHanded = false;
-        public float playerHeight = 1.7f;
-        public float sfxVolume = 0.7f;
-        public bool reduceDebris = false;
-        public bool noHUD = false;
-        public bool advancedHUD = false;
-        public bool autoRestart = false;
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面の作者
+        /// </summary>
+        public string levelAuthorName { get; set; } = null;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面ID(SHA-1)
+        /// </summary>
+        public string songHash { get; set; } = null;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面ID(Raw)
+        /// </summary>
+        public string levelId { get; set; } = null;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 曲のBPM
+        /// </summary>
+        public float songBPM { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面のNJS
+        /// </summary>
+        public float noteJumpSpeed { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面開始オフセット値(取得出来ていない？)
+        /// </summary>
+        public long songTimeOffset { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面の長さ[ms]
+        /// </summary>
+        public long length { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面プレイ開始時の時間。再開時に更新。(UNIX time[ms])
+        /// </summary>
+        public long start { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 一時停止時の時間(UNIX time[ms])
+        /// </summary>
+        public long paused { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面の難易度
+        /// </summary>
+        public string difficulty { get; set; } = null;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面のノーツ数
+        /// </summary>
+        public int notesCount { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面の爆弾数
+        /// </summary>
+        public int bombsCount { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面の壁の数
+        /// </summary>
+        public int obstaclesCount { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 現在のModでの最大スコア
+        /// </summary>
+        public int maxScore { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[BeatMap] 現在のModでの最大ランク
+        /// </summary>
+        public string maxRank { get; set; } = "E";
+
+        /// <summary>
+        /// StatusObject[BeatMap] 譜面の要求環境
+        /// </summary>
+        public string environmentName { get; set; } = null;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のスコア
+        /// </summary>
+        public int score { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のノーツ数で達成可能な最大スコア
+        /// </summary>
+        public int currentMaxScore { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のランク
+        /// </summary>
+        public string rank { get; set; } = "E";
+
+        /// <summary>
+        /// StatusObject[Performance] 現在処理したノーツ数
+        /// </summary>
+        public int passedNotes { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在ヒットしたノーツ数
+        /// </summary>
+        public int hitNotes { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在ミスしたノーツ数
+        /// </summary>
+        public int missedNotes { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] （未取得）
+        /// </summary>
+        public int lastNoteScore { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在処理した爆弾数
+        /// </summary>
+        public int passedBombs { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在ヒットした爆弾数
+        /// </summary>
+        public int hitBombs { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のコンボ数
+        /// </summary>
+        public int combo { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在の最大コンボ数
+        /// </summary>
+        public int maxCombo { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のコンボ乗数
+        /// </summary>
+        public int multiplier { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のコンボ乗数の進行具合
+        /// </summary>
+        public float multiplierProgress { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のバッテリエネルギー残量
+        /// </summary>
+        public int batteryEnergy { get; set; } = 1;
+
+        /// <summary>
+        /// StatusObject[Performance] 現在のエネルギー残量
+        /// </summary>
+        public float energy { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Mods] Mod乗数
+        /// </summary>
+        public float modifierMultiplier { get; set; } = 1f;
+
+        /// <summary>
+        /// StatusObject[Mods] 壁の有無
+        /// </summary>
+        public string modObstacles { get; set; } = "All";
+
+        /// <summary>
+        /// StatusObject[Mods] ノーミス
+        /// </summary>
+        public bool modInstaFail { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] ノーファウル
+        /// </summary>
+        public bool modNoFail { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] バッテリエネルギー
+        /// </summary>
+        public bool modBatteryEnergy { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] 最大バッテリ残量(DB未記録)
+        /// </summary>
+        public int batteryLives { get; set; } = 1;
+
+        /// <summary>
+        /// StatusObject[Mods] 消える矢印
+        /// </summary>
+        public bool modDisappearingArrows { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] 爆弾無し
+        /// </summary>
+        public bool modNoBombs { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] 曲の速度
+        /// </summary>
+        public string modSongSpeed { get; set; } = "Normal";
+
+        /// <summary>
+        /// StatusObject[Mods] 曲の速度のMod乗数
+        /// </summary>
+        public float songSpeedMultiplier { get; set; } = 1f;
+
+        /// <summary>
+        /// StatusObject[Mods] 矢印無し
+        /// </summary>
+        public bool modNoArrows { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] ゴーストノーツ
+        /// </summary>
+        public bool modGhostNotes { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] セイバークラッシュで失敗？（Hidden)
+        /// </summary>
+        public bool modFailOnSaberClash { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] 厳密な角度(Hidden)
+        /// </summary>
+        public bool modStrictAngles { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] Does something (Hidden)
+        /// </summary>
+        public bool modFastNotes { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Player settings] 静的ライト
+        /// </summary>
+        public bool staticLights { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Player settings] 左利き
+        /// </summary>
+        public bool leftHanded { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Player settings] プレイヤーの高さ
+        /// </summary>
+        public float playerHeight { get; set; } = 1.7f;
+
+        /// <summary>
+        /// StatusObject[Player settings] ノーツカット音量
+        /// </summary>
+        public float sfxVolume { get; set; } = 0.7f;
+
+        /// <summary>
+        /// StatusObject[Player settings] ノーツカット時の破片有無
+        /// </summary>
+        public bool reduceDebris { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Player settings] テキストとHUD無し
+        /// </summary>
+        public bool noHUD { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Player settings] Advanced HUD
+        /// </summary>
+        public bool advancedHUD { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Player settings] 失敗時に自動リスタート
+        /// </summary>
+        public bool autoRestart { get; set; } = false;
+
+        // 定数
+        /// <summary>
+        /// noteScore配列初期化サイズ (必要な配列サイズはノーツ数＋爆弾数)
+        /// </summary>
+        private const int initNoteScoreSize = 3000;
+
+        /// <summary>
+        /// noteScore配列追加サイズ
+        /// </summary>
+        private const int addNoteScoreSize = 1000;
+
+        /// <summary>
+        /// エネルギー変化格納用配列初期化サイズ
+        /// </summary>
+        private const int initEnergyDataSize = 1000;
+
+        /// <summary>
+        /// エネルギー変化格納用配列追加サイズ
+        /// </summary>
+        private const int addEnergyDataSize = 500;
+
+        // メンバ変数
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列
+        /// </summary>
+        private NoteDataEntity[] noteScores = new NoteDataEntity[initNoteScoreSize];
+
+        /// <summary>
+        /// エネルギー変化格納用配列
+        /// </summary>
+        private EnergyDataEntity[] energyDatas = new EnergyDataEntity[initEnergyDataSize];
+
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列の初期化済みサイズ
+        /// </summary>
+        private int initNoteSize = 0;
+
+        /// <summary>
+        /// エネルギー変化格納用配列の初期化済みサイズ
+        /// </summary>
+        private int initEnergySize = 0;
+
+        // メソッド
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public GameStatus()
+        {
+            NoteInit();
+            EnergyInit();
+        }
+
+        /// <summary>
+        /// noteScores 配列全体初期化
+        /// </summary>
+        private void NoteInit()
+        {
+            while (initNoteSize < noteScores.Length) {
+                noteScores[initNoteSize] = new NoteDataEntity();
+                initNoteSize++;
+            }
+        }
+
+        /// <summary>
+        /// energyDatas 配列全体初期化
+        /// </summary>
+        private void EnergyInit()
+        {
+            while (initEnergySize < energyDatas.Length) {
+                energyDatas[initEnergySize] = new EnergyDataEntity();
+                initEnergySize++;
+            }
+        }
+
+        /// <summary>
+        /// エネルギー変化格納用配列のリサイズ
+        /// </summary>
+        public void EnergyResize()
+        {
+            Array.Resize(ref energyDatas, initEnergySize + addEnergyDataSize);
+        }
+
+
+
 
         public void ResetMapInfo()
         {

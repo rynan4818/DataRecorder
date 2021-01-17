@@ -115,7 +115,7 @@ namespace DataRecorder.Models
 		{
 			// Event order: combo, multiplier, scoreController.noteWasCut, (LateUpdate) scoreController.scoreDidChange, afterCut, (LateUpdate) scoreController.scoreDidChange
 
-			var _gameStatus = this._gameStatus;
+			var gameStatus = this._gameStatus;
 
 			SetNoteCutStatus(noteData, noteCutInfo, true);
 
@@ -125,27 +125,27 @@ namespace DataRecorder.Models
 
 			ScoreModel.RawScoreWithoutMultiplier(noteCutInfo, out beforeCutScore, out afterCutScore, out cutDistanceScore);
 
-			_gameStatus.initialScore = beforeCutScore + cutDistanceScore;
-			_gameStatus.finalScore = -1;
-			_gameStatus.cutDistanceScore = cutDistanceScore;
-			_gameStatus.cutMultiplier = multiplier;
+			gameStatus.initialScore = beforeCutScore + cutDistanceScore;
+			gameStatus.finalScore = -1;
+			gameStatus.cutDistanceScore = cutDistanceScore;
+			gameStatus.cutMultiplier = multiplier;
 
 			if (noteData.colorType == ColorType.None) {
-				_gameStatus.passedBombs++;
-				_gameStatus.hitBombs++;
+				gameStatus.passedBombs++;
+				gameStatus.hitBombs++;
 
 				this.OnStatusUpdated(BeatSaberEvent.BombCut);
 			}
 			else {
-				_gameStatus.passedNotes++;
+				gameStatus.passedNotes++;
 
 				if (noteCutInfo.allIsOK) {
-					_gameStatus.hitNotes++;
+					gameStatus.hitNotes++;
 
 					this.OnStatusUpdated(BeatSaberEvent.NoteCut);
 				}
 				else {
-					_gameStatus.missedNotes++;
+					gameStatus.missedNotes++;
 
 					this.OnStatusUpdated(BeatSaberEvent.NoteMissed);
 				}
@@ -157,6 +157,10 @@ namespace DataRecorder.Models
 				if (noteCutInfoField.GetValue(acsb) == noteCutInfo) {
 					// public CutScoreBuffer#didFinishEvent<CutScoreBuffer>
 					noteCutMapping.TryAdd(noteCutInfo, noteData);
+					NoteCutDataEntity noteCutData = new NoteCutDataEntity();
+					noteCutData.swingRating = gameStatus.swingRating;
+					noteCutData.time = Utility.GetCurrentTime();
+					noteCutDataMapping.TryAdd(noteCutInfo, noteCutData);
 
 					acsb.didFinishEvent += OnNoteWasFullyCut;
 					break;
@@ -172,8 +176,10 @@ namespace DataRecorder.Models
 
 			NoteCutInfo noteCutInfo = (NoteCutInfo)noteCutInfoField.GetValue(acsb);
 			NoteData noteData = noteCutMapping[noteCutInfo];
+			NoteCutDataEntity noteCutId = noteCutDataMapping[noteCutInfo];
 
 			noteCutMapping.TryRemove(noteCutInfo, out _);
+			noteCutDataMapping.TryRemove(noteCutInfo, out _);
 
 			SetNoteCutStatus(noteData, noteCutInfo, false);
 
@@ -307,7 +313,8 @@ namespace DataRecorder.Models
         private GameSongController gameSongController;
         private GameEnergyCounter gameEnergyCounter;
         private ConcurrentDictionary<NoteCutInfo, NoteData> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteData>();
-        private GameplayModifiersModelSO gameplayModifiersSO;
+		private GameplayModifiersModelSO gameplayModifiersSO;
+		private ConcurrentDictionary<NoteCutInfo, NoteCutDataEntity> noteCutDataMapping = new ConcurrentDictionary<NoteCutInfo, NoteCutDataEntity>();
 
 		/// protected NoteCutInfo CutScoreBuffer._noteCutInfo
 		private FieldInfo noteCutInfoField = typeof(CutScoreBuffer).GetField("_noteCutInfo", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
