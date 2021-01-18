@@ -313,7 +313,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// noteScore配列追加サイズ
         /// </summary>
-        private const int addNoteScoreSize = 1000;
+        private const int addNoteScoreSize = 500;
 
         /// <summary>
         /// エネルギー変化格納用配列初期化サイズ
@@ -358,7 +358,7 @@ namespace DataRecorder.Models
         }
 
         /// <summary>
-        /// noteScores 配列全体初期化
+        /// ノーツ毎のスコア格納用配列全体初期化
         /// </summary>
         private void NoteInit()
         {
@@ -369,7 +369,7 @@ namespace DataRecorder.Models
         }
 
         /// <summary>
-        /// energyDatas 配列全体初期化
+        /// エネルギー変化格納用配列全体初期化
         /// </summary>
         private void EnergyInit()
         {
@@ -387,6 +387,13 @@ namespace DataRecorder.Models
             Array.Resize(ref energyDatas, initEnergySize + addEnergyDataSize);
         }
 
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列のリサイズ
+        /// </summary>
+        public void NoteResize(int size)
+        {
+            Array.Resize(ref noteScores, size + addNoteScoreSize);
+        }
 
 
 
