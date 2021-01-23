@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace DataRecorder.Models
 {
+	/// <summary>
+	/// ノーツカット格納情報
+	/// </summary>
 	public class NoteDataEntity
 	{
 		/// <summary>
@@ -253,7 +256,10 @@ namespace DataRecorder.Models
 		/// </summary>
 		public float? timeToNextBasicNote { get; set; } = null;
 	}
-	public class NoteCutDataEntity
+	/// <summary>
+	/// NoteWasCut保持内容
+	/// </summary>
+	public class NoteWasCutDataEntity
 	{
 		/// <summary>
 		/// イベント発生時間(UNIX time[ms])
@@ -263,8 +269,11 @@ namespace DataRecorder.Models
 		/// <summary>
 		/// ゲームのスイング評価。カット前の評価
 		/// </summary>
-		public float swingRating { get; set; } = 0;
+		public float? swingRating { get; set; } = 0;
 	}
+	/// <summary>
+	/// エネルギー変化保持内容
+	/// </summary>
 	public class EnergyDataEntity
 	{
 		/// <summary>

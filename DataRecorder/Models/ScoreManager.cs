@@ -125,10 +125,11 @@ namespace DataRecorder.Models
 
 			ScoreModel.RawScoreWithoutMultiplier(noteCutInfo, out beforeCutScore, out afterCutScore, out cutDistanceScore);
 
-			gameStatus.initialScore = beforeCutScore + cutDistanceScore;
-			gameStatus.finalScore = -1;
-			gameStatus.cutDistanceScore = cutDistanceScore;
-			gameStatus.cutMultiplier = multiplier;
+			var notescore = gameStatus.NoteDataGet();
+			notescore.initialScore = beforeCutScore + cutDistanceScore;
+			notescore.finalScore = -1;
+			notescore.cutDistanceScore = cutDistanceScore;
+			notescore.cutMultiplier = multiplier;
 
 			if (noteData.colorType == ColorType.None) {
 				gameStatus.passedBombs++;
@@ -157,8 +158,8 @@ namespace DataRecorder.Models
 				if (noteCutInfoField.GetValue(acsb) == noteCutInfo) {
 					// public CutScoreBuffer#didFinishEvent<CutScoreBuffer>
 					noteCutMapping.TryAdd(noteCutInfo, noteData);
-					NoteCutDataEntity noteCutData = new NoteCutDataEntity();
-					noteCutData.swingRating = gameStatus.swingRating;
+					NoteWasCutDataEntity noteCutData = new NoteWasCutDataEntity();
+					noteCutData.swingRating = notescore.swingRating;
 					noteCutData.time = Utility.GetCurrentTime();
 					noteCutDataMapping.TryAdd(noteCutInfo, noteCutData);
 
@@ -176,7 +177,7 @@ namespace DataRecorder.Models
 
 			NoteCutInfo noteCutInfo = (NoteCutInfo)noteCutInfoField.GetValue(acsb);
 			NoteData noteData = noteCutMapping[noteCutInfo];
-			NoteCutDataEntity noteCutId = noteCutDataMapping[noteCutInfo];
+			NoteWasCutDataEntity noteCutId = noteCutDataMapping[noteCutInfo];
 
 			noteCutMapping.TryRemove(noteCutInfo, out _);
 			noteCutDataMapping.TryRemove(noteCutInfo, out _);
@@ -188,10 +189,11 @@ namespace DataRecorder.Models
 
 			int multiplier = (int)cutScoreBufferMultiplierField.GetValue(acsb);
 
-			this._gameStatus.initialScore = beforeCutScore + cutDistanceScore;
-			this._gameStatus.finalScore = beforeCutScore + afterCutScore + cutDistanceScore;
-			this._gameStatus.cutDistanceScore = cutDistanceScore;
-			this._gameStatus.cutMultiplier = multiplier;
+			var notescore = this._gameStatus.NoteDataGet();
+			notescore.initialScore = beforeCutScore + cutDistanceScore;
+			notescore.finalScore = beforeCutScore + afterCutScore + cutDistanceScore;
+			notescore.cutDistanceScore = cutDistanceScore;
+			notescore.cutMultiplier = multiplier;
 
 			this.OnStatusUpdated(BeatSaberEvent.NoteFullyCut);
 
@@ -204,34 +206,35 @@ namespace DataRecorder.Models
 
 			gameStatus.ResetNoteCut();
 
+			var notescore = gameStatus.NoteDataGet();
 			// Backwards compatibility for <1.12.1
-			gameStatus.noteType = noteData.colorType == ColorType.None ? "Bomb" : noteData.colorType == ColorType.ColorA ? "NoteA" : noteData.colorType == ColorType.ColorB ? "NoteB" : noteData.colorType.ToString();
-			gameStatus.noteCutDirection = noteData.cutDirection.ToString();
-			gameStatus.noteLine = noteData.lineIndex;
-			gameStatus.noteLayer = (int)noteData.noteLineLayer;
+			notescore.noteType = noteData.colorType == ColorType.None ? "Bomb" : noteData.colorType == ColorType.ColorA ? "NoteA" : noteData.colorType == ColorType.ColorB ? "NoteB" : noteData.colorType.ToString();
+			notescore.noteCutDirection = noteData.cutDirection.ToString();
+			notescore.noteLine = noteData.lineIndex;
+			notescore.noteLayer = (int)noteData.noteLineLayer;
 			// If long notes are ever introduced, this name will make no sense
-			gameStatus.timeToNextBasicNote = noteData.timeToNextColorNote;
+			notescore.timeToNextBasicNote = noteData.timeToNextColorNote;
 
 			if (noteCutInfo != null) {
-				gameStatus.speedOK = noteCutInfo.speedOK;
-				gameStatus.directionOK = noteCutInfo.directionOK;
-				gameStatus.saberTypeOK = noteCutInfo.saberTypeOK;
-				gameStatus.wasCutTooSoon = noteCutInfo.wasCutTooSoon;
-				gameStatus.saberSpeed = noteCutInfo.saberSpeed;
-				gameStatus.saberDirX = noteCutInfo.saberDir[0];
-				gameStatus.saberDirY = noteCutInfo.saberDir[1];
-				gameStatus.saberDirZ = noteCutInfo.saberDir[2];
-				gameStatus.saberType = noteCutInfo.saberType.ToString();
-				gameStatus.swingRating = noteCutInfo.swingRatingCounter == null ? -1 : initialCut ? noteCutInfo.swingRatingCounter.beforeCutRating : noteCutInfo.swingRatingCounter.afterCutRating;
-				gameStatus.timeDeviation = noteCutInfo.timeDeviation;
-				gameStatus.cutDirectionDeviation = noteCutInfo.cutDirDeviation;
-				gameStatus.cutPointX = noteCutInfo.cutPoint[0];
-				gameStatus.cutPointY = noteCutInfo.cutPoint[1];
-				gameStatus.cutPointZ = noteCutInfo.cutPoint[2];
-				gameStatus.cutNormalX = noteCutInfo.cutNormal[0];
-				gameStatus.cutNormalY = noteCutInfo.cutNormal[1];
-				gameStatus.cutNormalZ = noteCutInfo.cutNormal[2];
-				gameStatus.cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
+				notescore.speedOK = noteCutInfo.speedOK;
+				notescore.directionOK = noteCutInfo.directionOK;
+				notescore.saberTypeOK = noteCutInfo.saberTypeOK;
+				notescore.wasCutTooSoon = noteCutInfo.wasCutTooSoon;
+				notescore.saberSpeed = noteCutInfo.saberSpeed;
+				notescore.saberDirX = noteCutInfo.saberDir[0];
+				notescore.saberDirY = noteCutInfo.saberDir[1];
+				notescore.saberDirZ = noteCutInfo.saberDir[2];
+				notescore.saberType = noteCutInfo.saberType.ToString();
+				notescore.swingRating = noteCutInfo.swingRatingCounter == null ? -1 : initialCut ? noteCutInfo.swingRatingCounter.beforeCutRating : noteCutInfo.swingRatingCounter.afterCutRating;
+				notescore.timeDeviation = noteCutInfo.timeDeviation;
+				notescore.cutDirectionDeviation = noteCutInfo.cutDirDeviation;
+				notescore.cutPointX = noteCutInfo.cutPoint[0];
+				notescore.cutPointY = noteCutInfo.cutPoint[1];
+				notescore.cutPointZ = noteCutInfo.cutPoint[2];
+				notescore.cutNormalX = noteCutInfo.cutNormal[0];
+				notescore.cutNormalY = noteCutInfo.cutNormal[1];
+				notescore.cutNormalZ = noteCutInfo.cutNormal[2];
+				notescore.cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
 			}
 		}
 
@@ -314,7 +317,7 @@ namespace DataRecorder.Models
         private GameEnergyCounter gameEnergyCounter;
         private ConcurrentDictionary<NoteCutInfo, NoteData> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteData>();
 		private GameplayModifiersModelSO gameplayModifiersSO;
-		private ConcurrentDictionary<NoteCutInfo, NoteCutDataEntity> noteCutDataMapping = new ConcurrentDictionary<NoteCutInfo, NoteCutDataEntity>();
+		private ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity> noteCutDataMapping = new ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity>();
 
 		/// protected NoteCutInfo CutScoreBuffer._noteCutInfo
 		private FieldInfo noteCutInfoField = typeof(CutScoreBuffer).GetField("_noteCutInfo", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
