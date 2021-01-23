@@ -24,7 +24,7 @@ namespace DataRecorder.Models
 		/// <summary>
 		/// [Game] noteCut時間
 		/// </summary>
-		public long cutTime { get; set; } = 0;
+		public long? cutTime { get; set; } = null;
 
 		/// <summary>
 		/// [Performance] 現在のスコア

@@ -7,7 +7,8 @@ using Zenject;
 
 namespace DataRecorder.Interfaces
 {
-    public interface IRepository : IInitializable, IDisposable
+    public interface IRepository
     {
+        void PaseEventAdd(string bs_event);
     }
 }

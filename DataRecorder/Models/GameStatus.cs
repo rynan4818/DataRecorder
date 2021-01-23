@@ -3,12 +3,36 @@ using System;
 namespace DataRecorder.Models
 {
     /// <summary>
-    /// HTTPStatusからまるこぴ
     /// ゲーム中のステータスを管理するクラスです。ゲーム中に1つのインスタンスしか作成されません。
     /// </summary>
     public class GameStatus
     {
         #region // プロパティ
+        /// <summary>
+        /// 譜面開始時刻 (UNIX time[ms])
+        /// </summary>
+        public long startTime { get; set; } = 0;
+
+        /// <summary>
+        /// 譜面終了時刻 (UNIX time[ms])
+        /// </summary>
+        public long endTime { get; set; } = 0;
+
+        /// <summary>
+        /// クリア条件
+        /// </summary>
+        public string cleared { get; set; } = null;
+
+        /// <summary>
+        /// 終了条件
+        /// </summary>
+        public int endFlag { get; set; } = 0;
+
+        /// <summary>
+        /// pause回数
+        /// </summary>
+        public int pauseCount { get; set; } = 0;
+
         /// <summary>
         /// StatusObject[Game] mode : パーティモード
         /// </summary>
@@ -362,11 +386,11 @@ namespace DataRecorder.Models
                 energyDatas[i] = new EnergyDataEntity();
         }
         #endregion
-        #region // メソッド
+        #region // パブリックメソッド
         /// <summary>
         /// エネルギー変化格納用配列のリサイズ
         /// </summary>
-        public void EnergyResize()
+        public void EnergyDataResize()
         {
             Array.Resize(ref energyDatas, energyDatas.Length + addEnergyDataSize);
         }
@@ -374,7 +398,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// ノーツ毎のスコア格納用配列のリサイズ
         /// </summary>
-        public void NoteResize(int size)
+        public void NoteDataResize(int size)
         {
             Array.Resize(ref noteScores, size + addNoteScoreSize);
         }
@@ -400,101 +424,56 @@ namespace DataRecorder.Models
         }
 
         /// <summary>
-        /// ノーツ毎のスコア格納用配列をリセット
+        /// ノーツ毎のスコア格納用配列のインデックスをインクリメント
         /// </summary>
-        public void ResetNoteCut()
+        public void NoteDataIndexUp()
         {
-            noteIndex = 0;
-            foreach (NoteDataEntity a in noteScores) {
-                a.bs_event = "";
-                a.time = 0;
-                a.cutTime = 0;
-                a.score = 0;
-                a.currentMaxScore = 0;
-                a.rank = "E";
-                a.passedNotes = 0;
-                a.hitNotes = 0;
-                a.missedNotes = 0;
-                a.lastNoteScore = 0;
-                a.passedBombs = 0;
-                a.hitBombs = 0;
-                a.combo = 0;
-                a.maxCombo = 0;
-                a.multiplier = 0;
-                a.multiplierProgress = 0;
-                a.batteryEnergy = 1;
-                a.noteID = null;
-                a.noteType = null;
-                a.noteCutDirection = null;
-                a.noteLine = null;
-                a.noteLayer = null;
-                a.speedOK = null;
-                a.directionOK = null;
-                a.saberTypeOK = null;
-                a.wasCutTooSoon = null;
-                a.initialScore = null;
-                a.beforeScore = null;
-                a.afterScore = null;
-                a.cutDistanceScore = null;
-                a.finalScore = null;
-                a.cutMultiplier = null;
-                a.saberSpeed = null;
-                a.saberDirX = null;
-                a.saberDirY = null;
-                a.saberDirZ = null;
-                a.saberType = null;
-                a.swingRating = null;
-                a.swingRatingFullyCut = null;
-                a.timeDeviation = null;
-                a.cutDirectionDeviation = null;
-                a.cutPointX = null;
-                a.cutPointY = null;
-                a.cutPointZ = null;
-                a.cutNormalX = null;
-                a.cutNormalY = null;
-                a.cutNormalZ = null;
-                a.cutDistanceToCenter = null;
-                a.timeToNextBasicNote = null;
+            noteIndex++;
+            if (noteIndex >= noteScores.Length) {
+                NoteDataResize(noteScores.Length);
+            }
+        }
+
+        public void EnergyDataIndexUp()
+        {
+            energyIndex++;
+            if (energyIndex >= energyDatas.Length) {
+                EnergyDataResize();
             }
         }
 
         /// <summary>
-        /// エネルギー変化格納用配列をリセット
+        /// GameStatusのリセット
         /// </summary>
-        public void ResetEnergy()
+        public void ResetGameStatus()
         {
-            energyIndex = 0;
-            foreach(EnergyDataEntity a in energyDatas) {
-                a.time = 0;
-                a.energy = 0;
-            }
-        }
-
-
-        public void ResetMapInfo()
-        {
+            this.startTime = 0;
+            this.endTime = 0;
+            this.cleared = null;
+            this.endFlag = 0;
+            this.pauseCount = 0;
+            this.partyMode = false;
+            this.mode = null;
+            this.scene = null;
             this.songName = null;
             this.songSubName = null;
             this.songAuthorName = null;
             this.levelAuthorName = null;
             this.songHash = null;
             this.levelId = null;
-            this.songBPM = 0f;
-            this.noteJumpSpeed = 0f;
+            this.songBPM = 0;
+            this.noteJumpSpeed = 0;
             this.songTimeOffset = 0;
             this.length = 0;
             this.start = 0;
             this.paused = 0;
             this.difficulty = null;
             this.notesCount = 0;
+            this.bombsCount = 0;
             this.obstaclesCount = 0;
             this.maxScore = 0;
             this.maxRank = "E";
             this.environmentName = null;
-        }
-
-        public void ResetPerformance()
-        {
             this.score = 0;
             this.currentMaxScore = 0;
             this.rank = "E";
@@ -510,6 +489,113 @@ namespace DataRecorder.Models
             this.multiplierProgress = 0;
             this.batteryEnergy = 1;
             this.energy = 0;
+            this.modifierMultiplier = 1f;
+            this.modObstacles = "All";
+            this.modInstaFail = false;
+            this.modNoFail = false;
+            this.modBatteryEnergy = false;
+            this.batteryLives = 1;
+            this.modDisappearingArrows = false;
+            this.modNoBombs = false;
+            this.modSongSpeed = "Normal";
+            this.songSpeedMultiplier = 1f;
+            this.modNoArrows = false;
+            this.modGhostNotes = false;
+            this.modFailOnSaberClash = false;
+            this.modStrictAngles = false;
+            this.modFastNotes = false;
+            this.staticLights = false;
+            this.leftHanded = false;
+            this.playerHeight = 1.7f;
+            this.sfxVolume = 0.7f;
+            this.reduceDebris = false;
+            this.noHUD = false;
+            this.advancedHUD = false;
+            this.autoRestart = false;
+            ResetNoteCut();
+            ResetEnergy();
+        }
+        #endregion
+        #region // プライベートメソッド
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列をリセット
+        /// </summary>
+        private void ResetNoteCut()
+        {
+            noteIndex = 0;
+            for (int i = 0; i < noteScores.Length; i++) {
+                if (noteScores[i] == null) {
+                    noteScores[i] = new NoteDataEntity();
+                }
+                else {
+                    noteScores[i].bs_event = "";
+                    noteScores[i].time = 0;
+                    noteScores[i].cutTime = 0;
+                    noteScores[i].score = 0;
+                    noteScores[i].currentMaxScore = 0;
+                    noteScores[i].rank = "E";
+                    noteScores[i].passedNotes = 0;
+                    noteScores[i].hitNotes = 0;
+                    noteScores[i].missedNotes = 0;
+                    noteScores[i].lastNoteScore = 0;
+                    noteScores[i].passedBombs = 0;
+                    noteScores[i].hitBombs = 0;
+                    noteScores[i].combo = 0;
+                    noteScores[i].maxCombo = 0;
+                    noteScores[i].multiplier = 0;
+                    noteScores[i].multiplierProgress = 0;
+                    noteScores[i].batteryEnergy = 1;
+                    noteScores[i].noteID = null;
+                    noteScores[i].noteType = null;
+                    noteScores[i].noteCutDirection = null;
+                    noteScores[i].noteLine = null;
+                    noteScores[i].noteLayer = null;
+                    noteScores[i].speedOK = null;
+                    noteScores[i].directionOK = null;
+                    noteScores[i].saberTypeOK = null;
+                    noteScores[i].wasCutTooSoon = null;
+                    noteScores[i].initialScore = null;
+                    noteScores[i].beforeScore = null;
+                    noteScores[i].afterScore = null;
+                    noteScores[i].cutDistanceScore = null;
+                    noteScores[i].finalScore = null;
+                    noteScores[i].cutMultiplier = null;
+                    noteScores[i].saberSpeed = null;
+                    noteScores[i].saberDirX = null;
+                    noteScores[i].saberDirY = null;
+                    noteScores[i].saberDirZ = null;
+                    noteScores[i].saberType = null;
+                    noteScores[i].swingRating = null;
+                    noteScores[i].swingRatingFullyCut = null;
+                    noteScores[i].timeDeviation = null;
+                    noteScores[i].cutDirectionDeviation = null;
+                    noteScores[i].cutPointX = null;
+                    noteScores[i].cutPointY = null;
+                    noteScores[i].cutPointZ = null;
+                    noteScores[i].cutNormalX = null;
+                    noteScores[i].cutNormalY = null;
+                    noteScores[i].cutNormalZ = null;
+                    noteScores[i].cutDistanceToCenter = null;
+                    noteScores[i].timeToNextBasicNote = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// エネルギー変化格納用配列をリセット
+        /// </summary>
+        private void ResetEnergy()
+        {
+            energyIndex = 0;
+            for (int i = 0; i < energyDatas.Length; i++) {
+                if (energyDatas[i] == null) {
+                    energyDatas[i] = new EnergyDataEntity();
+                }
+                else {
+                    energyDatas[i].time = 0;
+                    energyDatas[i].energy = 0;
+                }
+            }
         }
 
         #endregion

@@ -109,8 +109,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataBases\Repository.cs" />
-    <Compile Include="Enums\DataRecorderEnum.cs" />
-    <Compile Include="Extentions\EnumExtention.cs" />
     <Compile Include="Installers\DataRecorderAppInstaller.cs" />
     <Compile Include="Installers\DataRecorderGameInstaller.cs" />
     <Compile Include="Interfaces\IRepository.cs" />

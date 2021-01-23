@@ -1,4 +1,6 @@
-﻿using DataRecorder.Configuration;
+﻿using DataRecorder.Util;
+using DataRecorder.Models;
+using DataRecorder.Configuration;
 using DataRecorder.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -38,13 +40,36 @@ namespace DataRecorder.DataBases
 				this.CreateTable();
             }
         }
-        #endregion
-        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
-        #region // プライベートメソッド
+
+		/// <summary>
+		/// pause , resume イベント記録
+		/// </summary>
+		public void PaseEventAdd(string bs_event)
+        {
+			this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;");
+			this._connection.Open();
+			try {
+				using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
+					command.CommandText = "insert into MovieCutPause(time, event) values (@time, @event)";
+					command.Parameters.Add(new SQLiteParameter("@time", Utility.GetCurrentTime()));
+					command.Parameters.Add(new SQLiteParameter("@event", bs_event));
+					command.ExecuteNonQuery();
+				}
+			}
+			catch (Exception e) {
+				Logger.Error(e);
+			}
+			finally {
+				this._connection.Close();
+			}
+		}
+		#endregion
+		//ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+		#region // プライベートメソッド
 		/// <summary>
 		/// テーブルを作成します。
 		/// </summary>
-        private void CreateTable()
+		private void CreateTable()
         {
 			this._connection.Open();
 			try {
@@ -211,10 +236,14 @@ namespace DataRecorder.DataBases
 		//ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
 		#region // メンバ変数
 		private SQLiteConnection _connection;
-        #endregion
-        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
-        #region // 構築・破棄
-        public Repository()
+
+		[Inject]
+		private GameStatus _gameStatus;
+
+		#endregion
+		//ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+		#region // 構築・破棄
+		public Repository()
         {
         }
 
