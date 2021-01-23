@@ -117,6 +117,25 @@ namespace DataRecorder.Models
 
 			var gameStatus = this._gameStatus;
 
+			if (noteData.colorType != ColorType.None && noteCutInfo.allIsOK) {
+				gameStatus.passedNotes++;
+				gameStatus.hitNotes++;
+
+				List<CutScoreBuffer> list = (List<CutScoreBuffer>)afterCutScoreBuffersField.GetValue(scoreController);
+				foreach (CutScoreBuffer acsb in list) {
+					if (noteCutInfoField.GetValue(acsb) == noteCutInfo) {
+						// public CutScoreBuffer#didFinishEvent<CutScoreBuffer>
+						NoteWasCutDataEntity noteCutData = new NoteWasCutDataEntity();
+						noteCutData.noteData = noteData;
+						noteCutData.time = Utility.GetCurrentTime();
+						noteCutMapping.TryAdd(noteCutInfo, noteCutData);
+						acsb.didFinishEvent += OnNoteWasFullyCut;
+						break;
+					}
+				}
+				return;
+			}
+
 			SetNoteCutStatus(noteData, noteCutInfo, true);
 
 			int beforeCutScore = 0;
@@ -139,33 +158,9 @@ namespace DataRecorder.Models
 			}
 			else {
 				gameStatus.passedNotes++;
+				gameStatus.missedNotes++;
 
-				if (noteCutInfo.allIsOK) {
-					gameStatus.hitNotes++;
-
-					this.OnStatusUpdated(BeatSaberEvent.NoteCut);
-				}
-				else {
-					gameStatus.missedNotes++;
-
-					this.OnStatusUpdated(BeatSaberEvent.NoteMissed);
-				}
-			}
-
-			List<CutScoreBuffer> list = (List<CutScoreBuffer>)afterCutScoreBuffersField.GetValue(scoreController);
-
-			foreach (CutScoreBuffer acsb in list) {
-				if (noteCutInfoField.GetValue(acsb) == noteCutInfo) {
-					// public CutScoreBuffer#didFinishEvent<CutScoreBuffer>
-					noteCutMapping.TryAdd(noteCutInfo, noteData);
-					NoteWasCutDataEntity noteCutData = new NoteWasCutDataEntity();
-					noteCutData.swingRating = notescore.swingRating;
-					noteCutData.time = Utility.GetCurrentTime();
-					noteCutDataMapping.TryAdd(noteCutInfo, noteCutData);
-
-					acsb.didFinishEvent += OnNoteWasFullyCut;
-					break;
-				}
+				this.OnStatusUpdated(BeatSaberEvent.NoteMissed);
 			}
 		}
 
@@ -176,13 +171,11 @@ namespace DataRecorder.Models
 			int cutDistanceScore;
 
 			NoteCutInfo noteCutInfo = (NoteCutInfo)noteCutInfoField.GetValue(acsb);
-			NoteData noteData = noteCutMapping[noteCutInfo];
-			NoteWasCutDataEntity noteCutId = noteCutDataMapping[noteCutInfo];
+			NoteWasCutDataEntity noteCutData = noteCutMapping[noteCutInfo];
 
 			noteCutMapping.TryRemove(noteCutInfo, out _);
-			noteCutDataMapping.TryRemove(noteCutInfo, out _);
 
-			SetNoteCutStatus(noteData, noteCutInfo, false);
+			SetNoteCutStatus(noteCutData.noteData, noteCutInfo, false);
 
 			// public static ScoreModel.RawScoreWithoutMultiplier(NoteCutInfo, out int beforeCutRawScore, out int afterCutRawScore, out int cutDistanceRawScore)
 			ScoreModel.RawScoreWithoutMultiplier(noteCutInfo, out beforeCutScore, out afterCutScore, out cutDistanceScore);
@@ -266,7 +259,7 @@ namespace DataRecorder.Models
 			gameStatus.score = scoreAfterMultiplier;
 
 			int currentMaxScoreBeforeMultiplier = ScoreModel.MaxRawScoreForNumberOfNotes(gameStatus.passedNotes);
-			gameStatus.currentMaxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModifiers, gameplayModifiersSO);
+			gameStatus.currentMaxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
 
 			RankModel.Rank rank = RankModel.GetRankForScore(scoreBeforeMultiplier, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
 			gameStatus.rank = RankModel.GetRankName(rank);
@@ -315,9 +308,8 @@ namespace DataRecorder.Models
         private AudioTimeSyncController audioTimeSyncController;
         private GameSongController gameSongController;
         private GameEnergyCounter gameEnergyCounter;
-        private ConcurrentDictionary<NoteCutInfo, NoteData> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteData>();
+        private ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity>();
 		private GameplayModifiersModelSO gameplayModifiersSO;
-		private ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity> noteCutDataMapping = new ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity>();
 
 		/// protected NoteCutInfo CutScoreBuffer._noteCutInfo
 		private FieldInfo noteCutInfoField = typeof(CutScoreBuffer).GetField("_noteCutInfo", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -389,6 +381,10 @@ namespace DataRecorder.Models
 			gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
 			Logger.Info("1");
 
+			this._gameStatus.ResetNoteCut();
+			this._gameStatus.ResetEnergy();
+			this._gameStatus.ResetMapInfo();
+			this._gameStatus.ResetPerformance();
 			this._gameStatus.scene = "Song";
 
 			IDifficultyBeatmap diff = gameplayCoreSceneSetupData.difficultyBeatmap;
@@ -403,7 +399,7 @@ namespace DataRecorder.Models
 
 			float songSpeedMul = gameplayModifiers.songSpeedMul;
 			if (practiceSettings != null) songSpeedMul = practiceSettings.songSpeedMul;
-			float modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers);
+			float modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers, gameEnergyCounter.energy);
 			Logger.Info("2");
 
 			this._gameStatus.songName = level.songName;
@@ -426,11 +422,9 @@ namespace DataRecorder.Models
 			this._gameStatus.obstaclesCount = diff.beatmapData.obstaclesCount;
 			this._gameStatus.environmentName = level.environmentInfo.sceneInfo.sceneName;
 
-			this._gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(diff.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO);
-			this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO).ToString();
+			this._gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(diff.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
+			this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy).ToString();
 			Logger.Info("3");
-
-			this._gameStatus.ResetPerformance();
 
 			this._gameStatus.modifierMultiplier = modifierMultiplier;
 			this._gameStatus.songSpeedMultiplier = songSpeedMul;
@@ -438,7 +432,7 @@ namespace DataRecorder.Models
 
 			this._gameStatus.modObstacles = gameplayModifiers.enabledObstacleType.ToString();
 			this._gameStatus.modInstaFail = gameplayModifiers.instaFail;
-			this._gameStatus.modNoFail = gameplayModifiers.noFail;
+			this._gameStatus.modNoFail = gameplayModifiers.noFailOn0Energy;
 			this._gameStatus.modBatteryEnergy = gameplayModifiers.energyType == GameplayModifiers.EnergyType.Battery;
 			this._gameStatus.modDisappearingArrows = gameplayModifiers.disappearingArrows;
 			this._gameStatus.modNoBombs = gameplayModifiers.noBombs;
@@ -484,10 +478,6 @@ namespace DataRecorder.Models
 					Logger.Debug("dispose call");
 					try {
 						this._gameStatus.scene = "Menu"; // XXX: multiplayerController は常にこの前にクリーンアップされているので不可能(XXX: impossible because multiplayerController is always cleaned up before this)
-
-						this._gameStatus?.ResetMapInfo();
-
-						this._gameStatus?.ResetPerformance();
 
 						// 終了前にプレイヤーがマップを離れることで解決しないAfterCutScoreBuffersの参照を解放。(Release references for AfterCutScoreBuffers that don't resolve due to player leaving the map before finishing.)
 						noteCutMapping?.Clear();

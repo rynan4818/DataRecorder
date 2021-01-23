@@ -461,7 +461,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// エネルギー変化格納用配列をリセット
         /// </summary>
-        public void EnergyIndexReset()
+        public void ResetEnergy()
         {
             energyIndex = 0;
             foreach(EnergyDataEntity a in energyDatas) {

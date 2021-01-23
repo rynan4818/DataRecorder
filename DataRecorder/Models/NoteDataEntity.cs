@@ -262,14 +262,14 @@ namespace DataRecorder.Models
 	public class NoteWasCutDataEntity
 	{
 		/// <summary>
+		/// NoteData格納用
+		/// </summary>
+		public NoteData noteData { get; set; }
+
+		/// <summary>
 		/// イベント発生時間(UNIX time[ms])
 		/// </summary>
 		public long time { get; set; } = 0;
-
-		/// <summary>
-		/// ゲームのスイング評価。カット前の評価
-		/// </summary>
-		public float? swingRating { get; set; } = 0;
 	}
 	/// <summary>
 	/// エネルギー変化保持内容
