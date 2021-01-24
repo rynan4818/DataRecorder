@@ -9,6 +9,16 @@ namespace DataRecorder.Models
     {
         #region // プロパティ
         /// <summary>
+        /// ノーツ毎のスコア格納用配列の現在のインデックス
+        /// </summary>
+        public int noteIndex { get; set; } = 0;
+
+        /// <summary>
+        /// エネルギー変化格納用配列の現在のインデックス
+        /// </summary>
+        public int energyIndex { get; set; } = 0;
+
+        /// <summary>
         /// 譜面開始時刻 (UNIX time[ms])
         /// </summary>
         public long startTime { get; set; } = 0;
@@ -364,16 +374,6 @@ namespace DataRecorder.Models
         /// エネルギー変化格納用配列
         /// </summary>
         private EnergyDataEntity[] energyDatas = new EnergyDataEntity[defaultEnergyDataSize];
-
-        /// <summary>
-        /// ノーツ毎のスコア格納用配列の現在のインデックス
-        /// </summary>
-        private int noteIndex = 0;
-
-        /// <summary>
-        /// エネルギー変化格納用配列の現在のインデックス
-        /// </summary>
-        private int energyIndex = 0;
 
         #endregion
         #region // コンストラクタ

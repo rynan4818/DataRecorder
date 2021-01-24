@@ -21,7 +21,6 @@ namespace DataRecorder.Configuration
         // TODO : 必要な設定項目の追加
         public static PluginConfig Instance { get; set; }
         public virtual string DBFile { get; set; } = DataBaseFilePath;
-        public virtual bool HttpScenechange { get; set; } = false;
 
         /// <summary>
         /// This is called whenever BSIPA reads the config from disk (including when file changes are detected).
@@ -45,7 +44,6 @@ namespace DataRecorder.Configuration
         public virtual void CopyFrom(PluginConfig other)
         {
             // This instance's members populated from other
-            this.HttpScenechange = other.HttpScenechange;
         }
     }
 }
