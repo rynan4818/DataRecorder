@@ -64,6 +64,7 @@
     </ItemGroup>
     <Copy SourceFiles="$(OutputAssemblyName).dll" DestinationFiles="$(ArtifactDestination)\Plugins\$(AssemblyName).dll" />
     <Copy SourceFiles="$(OutputPath)dll\System.Data.SQLite.dll" DestinationFiles="$(ArtifactDestination)\Libs\System.Data.SQLite.dll" />
+    <Copy SourceFiles="$(OutputPath)dll\SQLite.Interop.dll" DestinationFiles="$(ArtifactDestination)\Libs\SQLite.Interop.dll" />
     <Message Text="PluginVersion: $(PluginVersion), AssemblyVersion: $(AssemblyVersion), GameVersion: $(GameVersion)" Importance="high" />
     <Delete Files="@(OldZips)" TreatErrorsAsWarnings="true" ContinueOnError="true" />
     <ZipDir SourceDirectory="$(ArtifactDestination)" DestinationFile="$(DestinationDirectory)$(ArtifactName).zip" />

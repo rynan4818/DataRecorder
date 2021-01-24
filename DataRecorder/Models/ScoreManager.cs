@@ -459,12 +459,10 @@ namespace DataRecorder.Models
             if (!disposedValue) {
                 if (disposing) {
                     // TODO: マネージド状態を破棄します (マネージド オブジェクト)
-                    // this._repository?.Dispose();
 
                     //各種イベントの削除
                     Logger.Debug("dispose call");
                     try {
-                        this._gameStatus.scene = "Menu"; // XXX: multiplayerController は常にこの前にクリーンアップされているので不可能(XXX: impossible because multiplayerController is always cleaned up before this)
                         this._repository.PlayDataAdd();
 
                         // 終了前にプレイヤーがマップを離れることで解決しないAfterCutScoreBuffersの参照を解放。(Release references for AfterCutScoreBuffers that don't resolve due to player leaving the map before finishing.)
