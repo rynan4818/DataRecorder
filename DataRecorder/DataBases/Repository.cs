@@ -74,6 +74,7 @@ namespace DataRecorder.DataBases
         /// </summary>
         public void PlayDataAdd()
         {
+            Logger.Debug(Utility.GetCurrentTime().ToString());
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
                 SQLiteTransaction transaction = null;
@@ -298,7 +299,8 @@ namespace DataRecorder.DataBases
                             Logger.Error("DB NoteScore MovieCutRecord Error");
                         #endregion
 
-                        //NoteScore
+                        #region // NoteScore
+                        /* //1-24 ノーツカット記録無し版用コメントアウト
                         // トランザクションを開始します。
                         transaction = this._connection.BeginTransaction();
                         command.CommandText = @"
@@ -485,6 +487,8 @@ namespace DataRecorder.DataBases
                         }
                         if (transaction != null)
                             transaction.Commit();
+                        */
+                        #endregion
                     }
                 }
                 // 例外が発生した場合
@@ -498,7 +502,7 @@ namespace DataRecorder.DataBases
                     this._connection.Close();
                 }
             }
-
+            Logger.Debug(Utility.GetCurrentTime().ToString());
         }
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
@@ -591,7 +595,7 @@ namespace DataRecorder.DataBases
                             energy REAL
                         );
                     ";
-                    command.ExecuteNonQuery();
+                    //command.ExecuteNonQuery(); //1-24 ノーツカット記録無し版用コメントアウト
                     command.CommandText = @"
                         CREATE TABLE IF NOT EXISTS NoteScore(
                             time INTEGER,
@@ -646,9 +650,9 @@ namespace DataRecorder.DataBases
                             timeToNextBasicNote REAL
                         );
                     ";
-                    command.ExecuteNonQuery();
+                    //command.ExecuteNonQuery(); //1-24 ノーツカット記録無し版用コメントアウト
                     DbColumnCheck(command, "MovieCutRecord", "levelId", "TEXT");
-                    DbColumnCheck(command, "NoteScore", "beforeScore", "INTEGER");
+                    //DbColumnCheck(command, "NoteScore", "beforeScore", "INTEGER"); //1-24 ノーツカット記録無し版用コメントアウト
                 }
             }
             catch (Exception e) {

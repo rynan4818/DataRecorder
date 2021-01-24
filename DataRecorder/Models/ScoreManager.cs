@@ -84,10 +84,8 @@ namespace DataRecorder.Models
                 foreach (CutScoreBuffer acsb in list) {
                     if (noteCutInfoField.GetValue(acsb) == noteCutInfo) {
                         // public CutScoreBuffer#didFinishEvent<CutScoreBuffer>
-                        NoteWasCutDataEntity noteCutData = new NoteWasCutDataEntity();
-                        noteCutData.noteData = noteData;
-                        noteCutData.time = Utility.GetCurrentTime();
-                        noteCutMapping.TryAdd(noteCutInfo, noteCutData);
+                        noteCutMapping.TryAdd(noteCutInfo, noteData);
+                        noteCutTiming.TryAdd(noteCutInfo, Utility.GetCurrentTime());
                         acsb.didFinishEvent += OnNoteWasFullyCut;
                         break;
                     }
@@ -124,7 +122,7 @@ namespace DataRecorder.Models
 
                 notescore.bs_event = "noteMissed";
             }
-            gameStatus.NoteDataIndexUp();
+            //gameStatus.NoteDataIndexUp();　//1-24 ノーツカット記録無し版用コメントアウト
         }
 
         public void OnNoteWasFullyCut(CutScoreBuffer acsb)
@@ -134,11 +132,10 @@ namespace DataRecorder.Models
             int cutDistanceScore;
 
             NoteCutInfo noteCutInfo = (NoteCutInfo)noteCutInfoField.GetValue(acsb);
-            NoteWasCutDataEntity noteCutData = noteCutMapping[noteCutInfo];
 
-            noteCutMapping.TryRemove(noteCutInfo, out _);
-
-            SetNoteCutStatus(noteCutData.noteData, noteCutInfo, false);
+            if (noteCutMapping.TryRemove(noteCutInfo, out var noteData)) {
+                SetNoteCutStatus(noteData, noteCutInfo, false);
+            }
 
             // public static ScoreModel.RawScoreWithoutMultiplier(NoteCutInfo, out int beforeCutRawScore, out int afterCutRawScore, out int cutDistanceRawScore)
             ScoreModel.RawScoreWithoutMultiplier(noteCutInfo, out beforeCutScore, out afterCutScore, out cutDistanceScore);
@@ -151,9 +148,11 @@ namespace DataRecorder.Models
             notescore.cutDistanceScore = cutDistanceScore;
             notescore.cutMultiplier = multiplier;
 
-            notescore.cutTime = noteCutData.time;
+            if (noteCutTiming.TryRemove(noteCutInfo, out var time)) {
+                notescore.cutTime = time;
+            }
             notescore.bs_event = "noteFullyCut";
-            this._gameStatus.NoteDataIndexUp();
+            //this._gameStatus.NoteDataIndexUp();　//1-24 ノーツカット記録無し版用コメントアウト
 
             acsb.didFinishEvent -= OnNoteWasFullyCut;
         }
@@ -166,6 +165,7 @@ namespace DataRecorder.Models
 
             var notescore = gameStatus.NoteDataGet();
             // Backwards compatibility for <1.12.1
+            notescore.colorType = (int)noteData.colorType;
             notescore.noteType = noteData.colorType == ColorType.None ? "Bomb" : noteData.colorType == ColorType.ColorA ? "NoteA" : noteData.colorType == ColorType.ColorB ? "NoteB" : noteData.colorType.ToString();
             notescore.noteCutDirection = noteData.cutDirection.ToString();
             notescore.noteLine = noteData.lineIndex;
@@ -220,7 +220,7 @@ namespace DataRecorder.Models
 
                 notescore.bs_event = "noteMissed";
             }
-            this._gameStatus.NoteDataIndexUp();
+            //this._gameStatus.NoteDataIndexUp();　//1-24 ノーツカット記録無し版用コメントアウト
         }
 
         public void OnScoreDidChange(int scoreBeforeMultiplier, int scoreAfterMultiplier)
@@ -262,7 +262,7 @@ namespace DataRecorder.Models
             var energyData = this._gameStatus.EnergyDataGet();
             energyData.energy = energy;
             energyData.time = Utility.GetCurrentTime();
-            this._gameStatus.EnergyDataIndexUp();
+            // this._gameStatus.EnergyDataIndexUp(); //1-24 ノーツカット記録無し版用コメントアウト
         }
 
         public void OnMultiplierDidChange(int multiplier, float multiplierProgress)
@@ -302,7 +302,8 @@ namespace DataRecorder.Models
         private AudioTimeSyncController audioTimeSyncController;
         private GameSongController gameSongController;
         private GameEnergyCounter gameEnergyCounter;
-        private ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteWasCutDataEntity>();
+        private ConcurrentDictionary<NoteCutInfo, NoteData> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteData>();
+        private ConcurrentDictionary<NoteCutInfo, long> noteCutTiming = new ConcurrentDictionary<NoteCutInfo, long>();
         private GameplayModifiersModelSO gameplayModifiersSO;
 
         /// protected NoteCutInfo CutScoreBuffer._noteCutInfo
@@ -327,7 +328,6 @@ namespace DataRecorder.Models
         private void Constractor(DiContainer container)
         {
             try {
-                // gameplayCoreSceneSetupData = container.Resolve<GameplayCoreSceneSetupData>();  ここ不要？
                 pauseController = container.Resolve<PauseController>();
                 scoreController = container.Resolve<ScoreController>();
                 gameplayModifiers = container.Resolve<GameplayModifiers>();
@@ -340,7 +340,6 @@ namespace DataRecorder.Models
                 Logger.Error(e);
                 return;
             }
-            Logger.Info("0");
 
             //各種イベントの追加
             // FIXME: 曲が終わったときには、このすべての参照先をきれいにしておく必要があります。(FIXME: i should probably clean references to all this when song is over)
@@ -373,7 +372,6 @@ namespace DataRecorder.Models
             gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
             gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
-            Logger.Info("1");
 
             this._gameStatus.ResetGameStatus();
             this._gameStatus.scene = "Song";
@@ -391,7 +389,6 @@ namespace DataRecorder.Models
             float songSpeedMul = gameplayModifiers.songSpeedMul;
             if (practiceSettings != null) songSpeedMul = practiceSettings.songSpeedMul;
             float modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers, gameEnergyCounter.energy);
-            Logger.Info("2");
 
             this._gameStatus.songName = level.songName;
             this._gameStatus.songSubName = level.songSubName;
@@ -415,7 +412,6 @@ namespace DataRecorder.Models
 
             this._gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(diff.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
             this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy).ToString();
-            Logger.Info("3");
 
             this._gameStatus.modifierMultiplier = modifierMultiplier;
             this._gameStatus.songSpeedMultiplier = songSpeedMul;
@@ -442,7 +438,6 @@ namespace DataRecorder.Models
             this._gameStatus.noHUD = playerSettings.noTextsAndHuds;
             this._gameStatus.advancedHUD = playerSettings.advancedHud;
             this._gameStatus.autoRestart = playerSettings.autoRestart;
-            Logger.Info("4");
             this._gameStatus.startTime = Utility.GetCurrentTime();
             this._gameStatus.cleared = "menu";
         }
@@ -474,6 +469,7 @@ namespace DataRecorder.Models
 
                         // 終了前にプレイヤーがマップを離れることで解決しないAfterCutScoreBuffersの参照を解放。(Release references for AfterCutScoreBuffers that don't resolve due to player leaving the map before finishing.)
                         noteCutMapping?.Clear();
+                        noteCutTiming?.Clear();
 
                         if (this.pauseController != null) {
                             this.pauseController.didPauseEvent -= this.OnGamePause;

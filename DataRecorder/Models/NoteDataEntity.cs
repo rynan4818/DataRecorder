@@ -255,21 +255,11 @@ namespace DataRecorder.Models
         /// [NoteCut] 次のノーツまでの時間（秒）
         /// </summary>
         public float? timeToNextBasicNote { get; set; } = null;
-    }
-    /// <summary>
-    /// NoteWasCut保持内容
-    /// </summary>
-    public class NoteWasCutDataEntity
-    {
-        /// <summary>
-        /// NoteData格納用
-        /// </summary>
-        public NoteData noteData { get; set; }
 
         /// <summary>
-        /// イベント発生時間(UNIX time[ms])
+        /// ノーツタイプ(noteID判定用)
         /// </summary>
-        public long time { get; set; } = 0;
+        public int colorType { get; set; } = 0;
     }
     /// <summary>
     /// エネルギー変化保持内容
@@ -285,5 +275,17 @@ namespace DataRecorder.Models
         /// エネルギー値
         /// </summary>
         public float energy { get; set; } = 0;
+    }
+    /// <summary>
+    /// noteID判定用
+    /// </summary>
+    public class MapDataEntity
+    {
+        public float time { get; set; } = 0;
+        public int lineIndex { get; set; } = 0;
+        public int noteLineLayer { get; set; } = 0;
+        public int colorType { get; set; } = 0;
+        public string cutDirection { get; set; } = "";
+        public float duration { get; set; } = 0;
     }
 }

@@ -19,6 +19,11 @@ namespace DataRecorder.Models
         public int energyIndex { get; set; } = 0;
 
         /// <summary>
+        /// 譜面データ用配列のインデックス
+        /// </summary>
+        public int mapIndex { get; set; } = 0;
+
+        /// <summary>
         /// 譜面開始時刻 (UNIX time[ms])
         /// </summary>
         public long startTime { get; set; } = 0;
@@ -347,7 +352,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// noteScore配列初期化サイズ (必要な配列サイズはノーツ数＋爆弾数)
         /// </summary>
-        private const int defaultNoteScoreSize = 3000;
+        private const int defaultNoteScoreSize = 1; //3000 //1-24 ノーツカット記録無し版用コメントアウト
 
         /// <summary>
         /// noteScore配列追加サイズ
@@ -355,9 +360,19 @@ namespace DataRecorder.Models
         private const int addNoteScoreSize = 500;
 
         /// <summary>
+        /// 譜面データ用配列初期化サイズ
+        /// </summary>
+        private const int defaultMapDataSize = 1; //3000 //1-24 ノーツカット記録無し版用コメントアウト
+
+        /// <summary>
+        /// 譜面データ用配列追加サイズ
+        /// </summary>
+        private const int addMapDataSize = 500;
+
+        /// <summary>
         /// エネルギー変化格納用配列初期化サイズ
         /// </summary>
-        private const int defaultEnergyDataSize = 1000;
+        private const int defaultEnergyDataSize = 1; //1000 //1-24 ノーツカット記録無し版用コメントアウト
 
         /// <summary>
         /// エネルギー変化格納用配列追加サイズ
@@ -374,6 +389,11 @@ namespace DataRecorder.Models
         /// エネルギー変化格納用配列
         /// </summary>
         private EnergyDataEntity[] energyDatas = new EnergyDataEntity[defaultEnergyDataSize];
+
+        /// <summary>
+        /// 譜面データ用配列
+        /// </summary>
+        private MapDataEntity[] mapDatas = new MapDataEntity[defaultMapDataSize];
 
         #endregion
         #region // コンストラクタ
@@ -404,6 +424,14 @@ namespace DataRecorder.Models
         }
 
         /// <summary>
+        /// 譜面データ用配列のリサイズ
+        /// </summary>
+        public void MapDataResize(int size)
+        {
+            Array.Resize(ref mapDatas, size + addMapDataSize);
+        }
+
+        /// <summary>
         /// ノーツ毎のスコア格納用配列から現在のインデックスの内容を取り出す
         /// </summary>
         public NoteDataEntity NoteDataGet()
@@ -424,6 +452,16 @@ namespace DataRecorder.Models
         }
 
         /// <summary>
+        /// 譜面データ用配列から現在のインデックスの内容を取り出す
+        /// </summary>
+        public MapDataEntity MapDataGet()
+        {
+            if (mapDatas[mapIndex] == null)
+                mapDatas[mapIndex] = new MapDataEntity();
+            return mapDatas[mapIndex];
+        }
+
+        /// <summary>
         /// ノーツ毎のスコア格納用配列のインデックスをインクリメント
         /// </summary>
         public void NoteDataIndexUp()
@@ -434,11 +472,25 @@ namespace DataRecorder.Models
             }
         }
 
+        /// <summary>
+        /// エネルギー変化格納用配列のインデックスをインクリメント
+        /// </summary>
         public void EnergyDataIndexUp()
         {
             energyIndex++;
             if (energyIndex >= energyDatas.Length) {
                 EnergyDataResize();
+            }
+        }
+
+        /// <summary>
+        /// 譜面データ用配列のインデックスをインクリメント
+        /// </summary>
+        public void MapDataIndexUp()
+        {
+            mapIndex++;
+            if (mapIndex >= mapDatas.Length) {
+                MapDataResize(mapDatas.Length);
             }
         }
 
