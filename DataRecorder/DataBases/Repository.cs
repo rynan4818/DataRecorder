@@ -299,7 +299,6 @@ namespace DataRecorder.DataBases
                         #endregion
 
                         #region // NoteScore
-                        /* //1-24 ノーツカット記録無し版用コメントアウト
                         // トランザクションを開始します。
                         transaction = this._connection.BeginTransaction();
                         command.CommandText = @"
@@ -486,7 +485,6 @@ namespace DataRecorder.DataBases
                         }
                         if (transaction != null)
                             transaction.Commit();
-                        */
                         #endregion
                     }
                 }
@@ -595,7 +593,7 @@ namespace DataRecorder.DataBases
                                 energy REAL
                             );
                         ";
-                        //command.ExecuteNonQuery(); //1-24 ノーツカット記録無し版用コメントアウト
+                        command.ExecuteNonQuery();
                         command.CommandText = @"
                             CREATE TABLE IF NOT EXISTS NoteScore(
                                 time INTEGER,
@@ -650,9 +648,9 @@ namespace DataRecorder.DataBases
                                 timeToNextBasicNote REAL
                             );
                         ";
-                        //command.ExecuteNonQuery(); //1-24 ノーツカット記録無し版用コメントアウト
+                        command.ExecuteNonQuery();
                         DbColumnCheck(command, "MovieCutRecord", "levelId", "TEXT");
-                        //DbColumnCheck(command, "NoteScore", "beforeScore", "INTEGER"); //1-24 ノーツカット記録無し版用コメントアウト
+                        DbColumnCheck(command, "NoteScore", "beforeScore", "INTEGER");
                     }
                 }
                 catch (Exception e) {

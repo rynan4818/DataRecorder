@@ -352,7 +352,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// noteScore配列初期化サイズ (必要な配列サイズはノーツ数＋爆弾数)
         /// </summary>
-        private const int defaultNoteScoreSize = 1; //3000 //1-24 ノーツカット記録無し版用コメントアウト
+        private const int defaultNoteScoreSize = 3000;
 
         /// <summary>
         /// noteScore配列追加サイズ
@@ -362,7 +362,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// 譜面データ用配列初期化サイズ
         /// </summary>
-        private const int defaultMapDataSize = 1; //3000 //1-24 ノーツカット記録無し版用コメントアウト
+        private const int defaultMapDataSize = 3000;
 
         /// <summary>
         /// 譜面データ用配列追加サイズ
@@ -372,7 +372,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// エネルギー変化格納用配列初期化サイズ
         /// </summary>
-        private const int defaultEnergyDataSize = 1; //1000 //1-24 ノーツカット記録無し版用コメントアウト
+        private const int defaultEnergyDataSize = 1000;
 
         /// <summary>
         /// エネルギー変化格納用配列追加サイズ

@@ -122,7 +122,7 @@ namespace DataRecorder.Models
 
                 notescore.bs_event = "noteMissed";
             }
-            //gameStatus.NoteDataIndexUp();　//1-24 ノーツカット記録無し版用コメントアウト
+            gameStatus.NoteDataIndexUp();
         }
 
         public void OnNoteWasFullyCut(CutScoreBuffer acsb)
@@ -152,7 +152,7 @@ namespace DataRecorder.Models
                 notescore.cutTime = time;
             }
             notescore.bs_event = "noteFullyCut";
-            //this._gameStatus.NoteDataIndexUp();　//1-24 ノーツカット記録無し版用コメントアウト
+            this._gameStatus.NoteDataIndexUp();
 
             acsb.didFinishEvent -= OnNoteWasFullyCut;
         }
@@ -220,7 +220,7 @@ namespace DataRecorder.Models
 
                 notescore.bs_event = "noteMissed";
             }
-            //this._gameStatus.NoteDataIndexUp();　//1-24 ノーツカット記録無し版用コメントアウト
+            this._gameStatus.NoteDataIndexUp();
         }
 
         public void OnScoreDidChange(int scoreBeforeMultiplier, int scoreAfterMultiplier)
@@ -262,7 +262,7 @@ namespace DataRecorder.Models
             var energyData = this._gameStatus.EnergyDataGet();
             energyData.energy = energy;
             energyData.time = Utility.GetCurrentTime();
-            // this._gameStatus.EnergyDataIndexUp(); //1-24 ノーツカット記録無し版用コメントアウト
+            this._gameStatus.EnergyDataIndexUp();
         }
 
         public void OnMultiplierDidChange(int multiplier, float multiplierProgress)
@@ -328,7 +328,6 @@ namespace DataRecorder.Models
         private void Constractor(DiContainer container)
         {
             try {
-                pauseController = container.Resolve<PauseController>();
                 scoreController = container.Resolve<ScoreController>();
                 gameplayModifiers = container.Resolve<GameplayModifiers>();
                 audioTimeSyncController = container.Resolve<AudioTimeSyncController>();
@@ -340,6 +339,7 @@ namespace DataRecorder.Models
                 Logger.Error(e);
                 return;
             }
+            pauseController = container.TryResolve<PauseController>();
 
             //各種イベントの追加
             // FIXME: 曲が終わったときには、このすべての参照先をきれいにしておく必要があります。(FIXME: i should probably clean references to all this when song is over)
