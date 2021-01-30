@@ -536,8 +536,8 @@ namespace DataRecorder.Models
                 while (this.noteScoresInitCount < this.noteScores.Length) {
                     if (this.noteScores[this.noteScoresInitCount] == null) {
                         this.noteScores[this.noteScoresInitCount] = new NoteDataEntity();
-                        this.noteScoresInitCount++;
                     }
+                    this.noteScoresInitCount++;
                 }
             }
         }
@@ -551,8 +551,8 @@ namespace DataRecorder.Models
                 while (this.energyDataInitCount < this.energyDatas.Length) {
                     if (this.energyDatas[this.energyDataInitCount] == null) {
                         this.energyDatas[this.energyDataInitCount] = new EnergyDataEntity();
-                        this.energyDataInitCount++;
                     }
+                    this.energyDataInitCount++;
                 }
             }
         }
@@ -566,8 +566,8 @@ namespace DataRecorder.Models
                 while (this.mapDatasInitCount < this.mapDatas.Length) {
                     if (this.mapDatas[this.mapDatasInitCount] == null) {
                         this.mapDatas[this.mapDatasInitCount] = new MapDataEntity();
-                        this.mapDatasInitCount++;
                     }
+                    this.mapDatasInitCount++;
                 }
             }
         }

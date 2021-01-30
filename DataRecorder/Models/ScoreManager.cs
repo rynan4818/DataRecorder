@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
+using System.Threading;
 
 namespace DataRecorder.Models
 {
@@ -58,14 +59,16 @@ namespace DataRecorder.Models
             this._gameStatus.paused = Utility.GetCurrentTime();
             this._gameStatus.endTime = this._gameStatus.paused;
             this._gameStatus.pauseCount++;
-            this._repository.PauseEventAdd(BeatSaberEvent.Pause);
+            while (this._repository.pauseEventAddFlag != null) Thread.Sleep(1);
+            this._repository.pauseEventAddFlag = BeatSaberEvent.Pause;
         }
 
         public void OnGameResume()
         {
             this._gameStatus.start = Utility.GetCurrentTime() - (long)(audioTimeSyncController.songTime * 1000f / this._gameStatus.songSpeedMultiplier);
             this._gameStatus.paused = 0;
-            this._repository.PauseEventAdd(BeatSaberEvent.Resume);
+            while (this._repository.pauseEventAddFlag != null) Thread.Sleep(1);
+            this._repository.pauseEventAddFlag = BeatSaberEvent.Resume;
         }
 
         public void OnNoteWasCut(NoteData noteData, NoteCutInfo noteCutInfo, int multiplier)
@@ -288,6 +291,8 @@ namespace DataRecorder.Models
         private FieldInfo cutScoreBufferMultiplierField = typeof(CutScoreBuffer).GetField("_multiplier", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
         [Inject]
+        DiContainer container;
+        [Inject]
         private IRepository _repository;
         [Inject]
         private GameStatus _gameStatus;
@@ -298,10 +303,17 @@ namespace DataRecorder.Models
         /// Zenjetにより最初に呼ばれる関数です。
         /// </summary>
         /// <param name="container"></param>
-        [Inject]
-        private void Constractor(DiContainer container)
+        //[Inject]
+        //private void Constractor(DiContainer container)
+        //{
+        //}
+
+        /// <summary>
+        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
+        /// </summary>
+        public void Initialize()
         {
-            Logger.Debug("Constractor call");
+            Logger.Debug("Initialize call");
             Logger.Debug(Utility.GetCurrentTime().ToString());
             try {
                 this.scoreController = container.Resolve<ScoreController>();
@@ -348,17 +360,9 @@ namespace DataRecorder.Models
             this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
             this.gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
-        }
-
-        /// <summary>
-        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
-        /// </summary>
-        public void Initialize()
-        {
-            Logger.Debug("Initialize call");
-            Logger.Debug(Utility.GetCurrentTime().ToString());
 
             //BeatMapデータの登録
+            while (this._repository.playDataAddFlag) Thread.Sleep(1);
             this._gameStatus.ResetGameStatus();
             this._gameStatus.scene = BeatSaberScene.Song;
 
@@ -464,7 +468,7 @@ namespace DataRecorder.Models
                     Logger.Debug("dispose call");
                     Logger.Debug(Utility.GetCurrentTime().ToString());
                     try {
-                        this._repository.PlayDataAdd();
+                        this._repository.playDataAddFlag = true;
 
                         // 終了前にプレイヤーがマップを離れることで解決しないAfterCutScoreBuffersの参照を解放。(Release references for AfterCutScoreBuffers that don't resolve due to player leaving the map before finishing.)
                         noteCutMapping?.Clear();

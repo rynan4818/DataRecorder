@@ -11,13 +11,13 @@ namespace DataRecorder.Interfaces
     public interface IRepository
     {
         /// <summary>
-        /// pause , resume イベント記録
+        /// プレイデータのデータベース書き込みフラグ
         /// </summary>
-        void PauseEventAdd(BeatSaberEvent bs_event);
+        bool playDataAddFlag { get; set; }
 
         /// <summary>
-        /// プレイデータの記録
+        /// pause , resume イベント書き込みフラグ
         /// </summary>
-        void PlayDataAdd();
+        BeatSaberEvent? pauseEventAddFlag { get; set; }
     }
 }

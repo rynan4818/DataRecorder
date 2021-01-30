@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Zenject;
+using System.Threading;
 
 namespace DataRecorder.DataBases
 {
@@ -22,6 +23,15 @@ namespace DataRecorder.DataBases
     {
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // プロパティ
+        /// <summary>
+        /// プレイデータのデータベース書き込みフラグ
+        /// </summary>
+        public bool playDataAddFlag { get; set; } = false;
+
+        /// <summary>
+        /// pause , resume イベント書き込みフラグ
+        /// </summary>
+        public BeatSaberEvent? pauseEventAddFlag { get; set; } = null;
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // オーバーライドメソッド
@@ -40,13 +50,30 @@ namespace DataRecorder.DataBases
                 PluginConfig.Instance.DBFile = PluginConfig.DataBaseFilePath;
             }
             this.CreateTable();
+            this.thread = new Thread(new ThreadStart(this.DbInsertEvent));
+            this.thread.Start();
+        }
+        #endregion
+        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+        #region // プライベートメソッド
+        /// <summary>
+        /// 非同期用データベース書き込み処理
+        /// </summary>
+        private void DbInsertEvent()
+        {
+            while (true) {
+                if (this.playDataAddFlag) this.PlayDataAdd();
+                if (this.pauseEventAddFlag != null) this.PauseEventAdd(this.pauseEventAddFlag);
+                Thread.Sleep(1);
+            }
         }
 
         /// <summary>
         /// pause , resume イベント記録
         /// </summary>
-        public void PauseEventAdd(BeatSaberEvent bs_event)
+        private void PauseEventAdd(BeatSaberEvent? bs_event)
         {
+            Logger.Debug("PauseEventAdd call");
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
                 try {
@@ -67,13 +94,16 @@ namespace DataRecorder.DataBases
                     this._connection.Close();
                 }
             }
+            this.pauseEventAddFlag = null;
         }
 
         /// <summary>
         /// プレイデータの記録
         /// </summary>
-        public void PlayDataAdd()
+        private void PlayDataAdd()
         {
+            Logger.Debug("PlayDataAdd call");
+            Logger.Debug(Utility.GetCurrentTime().ToString());
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
                 SQLiteTransaction transaction = null;
@@ -499,10 +529,11 @@ namespace DataRecorder.DataBases
                     this._connection.Close();
                 }
             }
+            this._gameStatus.ResetGameStatus();
+            this.playDataAddFlag = false;
+            Logger.Debug(Utility.GetCurrentTime().ToString());
         }
-        #endregion
-        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
-        #region // プライベートメソッド
+
         /// <summary>
         /// テーブルを作成します。
         /// </summary>
@@ -682,6 +713,7 @@ namespace DataRecorder.DataBases
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // メンバ変数
         private SQLiteConnection _connection;
+        private Thread thread;
 
         [Inject]
         private GameStatus _gameStatus;
@@ -701,6 +733,7 @@ namespace DataRecorder.DataBases
                 if (disposing) {
                     // TODO: マネージド状態を破棄します (マネージド オブジェクト)
                     this._connection?.Dispose();
+                    this.thread?.Abort();
                 }
 
                 // TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします
