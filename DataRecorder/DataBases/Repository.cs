@@ -407,6 +407,7 @@ namespace DataRecorder.DataBases
                                             )
                         ";
                         int endIndex = gameStatus.noteIndex;
+                        gameStatus.lastNoteId = 0;
                         for (gameStatus.noteIndex = 0; gameStatus.noteIndex < endIndex; gameStatus.noteIndex++) {
                             var noteScore = gameStatus.NoteDataGet();
                             command.Parameters.Add(new SQLiteParameter("@time", noteScore.time));
@@ -427,7 +428,7 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(new SQLiteParameter("@multiplier", noteScore.multiplier));
                             command.Parameters.Add(new SQLiteParameter("@multiplierProgress", noteScore.multiplierProgress));
                             command.Parameters.Add(new SQLiteParameter("@batteryEnergy", noteScore.batteryEnergy));
-                            command.Parameters.Add(new SQLiteParameter("@noteID", noteScore.noteID));
+                            command.Parameters.Add(new SQLiteParameter("@noteID", gameStatus.GetNoteId()));
                             string noteType = noteScore.colorType == ColorType.None ? "Bomb" : noteScore.colorType == ColorType.ColorA ? "NoteA" : noteScore.colorType == ColorType.ColorB ? "NoteB" : noteScore.colorType.ToString();
                             command.Parameters.Add(new SQLiteParameter("@noteType", noteType));
                             command.Parameters.Add(new SQLiteParameter("@noteCutDirection", noteScore.noteCutDirection.ToString()));

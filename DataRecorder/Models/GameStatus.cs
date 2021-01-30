@@ -348,6 +348,11 @@ namespace DataRecorder.Models
         /// StatusObject[Player settings] 失敗時に自動リスタート
         /// </summary>
         public bool autoRestart { get; set; } = false;
+
+        /// <summary>
+        /// noteID検索用
+        /// </summary>
+        public int lastNoteId { get; set; } = 0;
         #endregion
         #region // 定数
         /// <summary>
@@ -626,6 +631,32 @@ namespace DataRecorder.Models
             this.ResetEnergy();
             this.ResetMap();
         }
+        /// <summary>
+        /// 現在のインデックスのNoteIDを取得する
+        /// </summary>
+        public int GetNoteId()
+        {
+            // Backwards compatibility for <1.12.1
+            int noteID = -1;
+            // Check the near notes first for performance
+            for (int i = Math.Max(0, this.lastNoteId - 10); i < this.mapDatas.Length; i++) {
+                if (NoteDataEquals(this.mapDatas[i], this.noteScores[noteIndex], this.modNoArrows)) {
+                    noteID = i;
+                    if (i > this.lastNoteId) this.lastNoteId = i;
+                    break;
+                }
+            }
+            // If that failed, check the rest of the notes in reverse order
+            if (noteID == -1) {
+                for (int i = Math.Max(0, this.lastNoteId - 11); i >= 0; i--) {
+                    if (NoteDataEquals(this.mapDatas[i], this.noteScores[noteIndex], this.modNoArrows)) {
+                        noteID = i;
+                        break;
+                    }
+                }
+            }
+            return noteID;
+        }
         #endregion
         #region // プライベートメソッド
         /// <summary>
@@ -641,6 +672,8 @@ namespace DataRecorder.Models
                 else {
                     this.noteScores[i].bs_event = null;
                     this.noteScores[i].time = 0;
+                    this.noteScores[i].noteTime = 0;
+                    this.noteScores[i].duration = 0;
                     this.noteScores[i].cutTime = 0;
                     this.noteScores[i].score = 0;
                     this.noteScores[i].currentMaxScore = 0;
@@ -656,7 +689,6 @@ namespace DataRecorder.Models
                     this.noteScores[i].multiplier = 0;
                     this.noteScores[i].multiplierProgress = 0;
                     this.noteScores[i].batteryEnergy = 1;
-                    this.noteScores[i].noteID = null;
                     this.noteScores[i].colorType = ColorType.ColorA;
                     this.noteScores[i].noteCutDirection = null;
                     this.noteScores[i].noteLine = null;
@@ -730,6 +762,13 @@ namespace DataRecorder.Models
             this.mapDatasInitCount = this.mapDatas.Length;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public static bool NoteDataEquals(MapDataEntity a, NoteDataEntity b, bool noArrows = false)
+        {
+            return a.time == b.noteTime && a.lineIndex == b.noteLine && a.noteLineLayer == b.noteLayer && a.colorType == b.colorType && (noArrows || a.cutDirection == b.noteCutDirection) && a.duration == b.duration;
+        }
         #endregion
     }
 }

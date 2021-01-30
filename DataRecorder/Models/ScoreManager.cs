@@ -158,6 +158,8 @@ namespace DataRecorder.Models
             var notescore = gameStatus.NoteDataGet();
 
             // Backwards compatibility for <1.12.1
+            notescore.noteTime = noteData.time;
+            notescore.duration = noteData.duration;
             notescore.colorType = noteData.colorType;
             notescore.noteCutDirection = noteData.cutDirection;
             notescore.noteLine = noteData.lineIndex;

@@ -23,6 +23,16 @@ namespace DataRecorder.Models
         public long time { get; set; } = 0;
 
         /// <summary>
+        /// [Game] ノーツ譜面時間 [noteID調査用]
+        /// </summary>
+        public float noteTime { get; set; } = 0;
+
+        /// <summary>
+        /// [Game] ノーツの間隔？ [noteID調査用]
+        /// </summary>
+        public float duration { get; set; } = 0;
+
+        /// <summary>
         /// [Game] noteCut時間
         /// </summary>
         public long? cutTime { get; set; } = null;
@@ -96,11 +106,6 @@ namespace DataRecorder.Models
         /// [Performance] 現在のバッテリー寿命の残り。バッテリーエネルギーとインスタ障害が無効になっている場合はnull。
         /// </summary>
         public int? batteryEnergy { get; set; } = 1;
-
-        /// <summary>
-        /// [NoteCut] ノーツ番号
-        /// </summary>
-        public int? noteID { get; set; } = null;
 
         /// <summary>
         /// [NoteCut] ノーツタイプ(noteID判定用)
@@ -267,11 +272,29 @@ namespace DataRecorder.Models
     /// </summary>
     public class MapDataEntity
     {
+        /// <summary>
+        /// ノーツの譜面時間
+        /// </summary>
         public float time { get; set; } = 0;
+        /// <summary>
+        /// 左から右へのノーツの水平位置[0..3]
+        /// </summary>
         public int lineIndex { get; set; } = 0;
+        /// <summary>
+        /// ノーツの水平位置
+        /// </summary>
         public NoteLineLayer noteLineLayer { get; set; } = NoteLineLayer.Base;
+        /// <summary>
+        /// ノーツの色
+        /// </summary>
         public ColorType colorType { get; set; } = ColorType.None;
+        /// <summary>
+        /// ノーツのカット方向
+        /// </summary>
         public NoteCutDirection cutDirection { get; set; } = NoteCutDirection.None;
+        /// <summary>
+        /// ノーツの間隔？
+        /// </summary>
         public float duration { get; set; } = 0;
     }
 }
