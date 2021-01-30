@@ -2,6 +2,7 @@
 using DataRecorder.Models;
 using DataRecorder.Configuration;
 using DataRecorder.Interfaces;
+using DataRecorder.Enums;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -44,7 +45,7 @@ namespace DataRecorder.DataBases
         /// <summary>
         /// pause , resume イベント記録
         /// </summary>
-        public void PaseEventAdd(string bs_event)
+        public void PauseEventAdd(BeatSaberEvent bs_event)
         {
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
@@ -52,7 +53,7 @@ namespace DataRecorder.DataBases
                     using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
                         command.CommandText = "insert into MovieCutPause(time, event) values (@time, @event)";
                         command.Parameters.Add(new SQLiteParameter("@time", Utility.GetCurrentTime()));
-                        command.Parameters.Add(new SQLiteParameter("@event", bs_event));
+                        command.Parameters.Add(new SQLiteParameter("@event", bs_event.GetDescription()));
                         var result = command.ExecuteNonQuery();
                         // データ更新できない場合
                         if (result != 1)
@@ -73,7 +74,6 @@ namespace DataRecorder.DataBases
         /// </summary>
         public void PlayDataAdd()
         {
-            Logger.Debug(Utility.GetCurrentTime().ToString());
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
                 SQLiteTransaction transaction = null;
@@ -214,13 +214,13 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(new SQLiteParameter("@startTime", gameStatus.startTime));
                         command.Parameters.Add(new SQLiteParameter("@endTime", gameStatus.endTime));
                         command.Parameters.Add(new SQLiteParameter("@menuTime", Utility.GetCurrentTime()));
-                        command.Parameters.Add(new SQLiteParameter("@cleared", gameStatus.cleared));
+                        command.Parameters.Add(new SQLiteParameter("@cleared", gameStatus.cleared.GetDescription()));
                         command.Parameters.Add(new SQLiteParameter("@endFlag", gameStatus.endFlag));
                         command.Parameters.Add(new SQLiteParameter("@pauseCount", gameStatus.pauseCount));
                         //gameステータス
                         command.Parameters.Add(new SQLiteParameter("@pluginVersion", Utility.GetPluginVersion()));
                         command.Parameters.Add(new SQLiteParameter("@gameVersion", Utility.GetGameVersion()));
-                        command.Parameters.Add(new SQLiteParameter("@scene", gameStatus.scene));
+                        command.Parameters.Add(new SQLiteParameter("@scene", gameStatus.scene.GetDescription()));
                         command.Parameters.Add(new SQLiteParameter("@mode", gameStatus.mode == null ? null : (gameStatus.partyMode ? "Party" : "Solo") + gameStatus.mode));
                         //beatmapステータス
                         command.Parameters.Add(new SQLiteParameter("@songName", gameStatus.songName));
@@ -246,7 +246,7 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(new SQLiteParameter("@bombsCount", gameStatus.bombsCount));
                         command.Parameters.Add(new SQLiteParameter("@obstaclesCount", gameStatus.obstaclesCount));
                         command.Parameters.Add(new SQLiteParameter("@maxScore", gameStatus.maxScore));
-                        command.Parameters.Add(new SQLiteParameter("@maxRank", gameStatus.maxRank));
+                        command.Parameters.Add(new SQLiteParameter("@maxRank", gameStatus.maxRank.ToString()));
                         command.Parameters.Add(new SQLiteParameter("@environmentName", gameStatus.environmentName));
                         double scorePercentage;
                         if (gameStatus.currentMaxScore == 0)
@@ -257,7 +257,7 @@ namespace DataRecorder.DataBases
                         //performanceステータス
                         command.Parameters.Add(new SQLiteParameter("@score", gameStatus.score));
                         command.Parameters.Add(new SQLiteParameter("@currentMaxScore", gameStatus.currentMaxScore));
-                        command.Parameters.Add(new SQLiteParameter("@rank", gameStatus.rank));
+                        command.Parameters.Add(new SQLiteParameter("@rank", RankModel.GetRankName(gameStatus.rank)));
                         command.Parameters.Add(new SQLiteParameter("@passedNotes", gameStatus.passedNotes));
                         command.Parameters.Add(new SQLiteParameter("@hitNotes", gameStatus.hitNotes));
                         command.Parameters.Add(new SQLiteParameter("@missedNotes", gameStatus.missedNotes));
@@ -268,16 +268,16 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(new SQLiteParameter("@maxCombo", gameStatus.maxCombo));
                         //modステータス
                         command.Parameters.Add(new SQLiteParameter("@multiplier", gameStatus.modifierMultiplier));
-                        if (gameStatus.modObstacles == null || gameStatus.modObstacles == "NoObstacles")
+                        if (gameStatus.modObstacles == GameplayModifiers.EnabledObstacleType.NoObstacles)
                             command.Parameters.Add(new SQLiteParameter("@obstacles", 0));
                         else
-                            command.Parameters.Add(new SQLiteParameter("@obstacles", gameStatus.modObstacles));
+                            command.Parameters.Add(new SQLiteParameter("@obstacles", gameStatus.modObstacles.ToString()));
                         command.Parameters.Add(new SQLiteParameter("@instaFail", gameStatus.modInstaFail ? 1 : 0));
                         command.Parameters.Add(new SQLiteParameter("@noFail", gameStatus.modNoFail ? 1 : 0));
                         command.Parameters.Add(new SQLiteParameter("@batteryEnergy", gameStatus.modBatteryEnergy ? 1 : 0));
                         command.Parameters.Add(new SQLiteParameter("@disappearingArrows", gameStatus.modDisappearingArrows ? 1 : 0));
                         command.Parameters.Add(new SQLiteParameter("@noBombs", gameStatus.modNoBombs ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@songSpeed", gameStatus.modSongSpeed));
+                        command.Parameters.Add(new SQLiteParameter("@songSpeed", gameStatus.modSongSpeed.ToString()));
                         command.Parameters.Add(new SQLiteParameter("@songSpeedMultiplier", gameStatus.songSpeedMultiplier));
                         command.Parameters.Add(new SQLiteParameter("@noArrows", gameStatus.modNoArrows ? 1 : 0));
                         command.Parameters.Add(new SQLiteParameter("@ghostNotes", gameStatus.modGhostNotes ? 1 : 0));
@@ -412,10 +412,10 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(new SQLiteParameter("@time", noteScore.time));
                             command.Parameters.Add(new SQLiteParameter("@cutTime", noteScore.cutTime));
                             command.Parameters.Add(new SQLiteParameter("@startTime", gameStatus.startTime));
-                            command.Parameters.Add(new SQLiteParameter("@event", noteScore.bs_event));
+                            command.Parameters.Add(new SQLiteParameter("@event", noteScore.bs_event.GetDescription()));
                             command.Parameters.Add(new SQLiteParameter("@score", noteScore.score));
                             command.Parameters.Add(new SQLiteParameter("@currentMaxScore", noteScore.currentMaxScore));
-                            command.Parameters.Add(new SQLiteParameter("@rank", noteScore.rank));
+                            command.Parameters.Add(new SQLiteParameter("@rank", RankModel.GetRankName(noteScore.rank)));
                             command.Parameters.Add(new SQLiteParameter("@passedNotes", noteScore.passedNotes));
                             command.Parameters.Add(new SQLiteParameter("@hitNotes", noteScore.hitNotes));
                             command.Parameters.Add(new SQLiteParameter("@missedNotes", noteScore.missedNotes));
@@ -428,17 +428,18 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(new SQLiteParameter("@multiplierProgress", noteScore.multiplierProgress));
                             command.Parameters.Add(new SQLiteParameter("@batteryEnergy", noteScore.batteryEnergy));
                             command.Parameters.Add(new SQLiteParameter("@noteID", noteScore.noteID));
-                            command.Parameters.Add(new SQLiteParameter("@noteType", noteScore.noteType));
-                            command.Parameters.Add(new SQLiteParameter("@noteCutDirection", noteScore.noteCutDirection));
+                            string noteType = noteScore.colorType == ColorType.None ? "Bomb" : noteScore.colorType == ColorType.ColorA ? "NoteA" : noteScore.colorType == ColorType.ColorB ? "NoteB" : noteScore.colorType.ToString();
+                            command.Parameters.Add(new SQLiteParameter("@noteType", noteType));
+                            command.Parameters.Add(new SQLiteParameter("@noteCutDirection", noteScore.noteCutDirection.ToString()));
                             command.Parameters.Add(new SQLiteParameter("@noteLine", noteScore.noteLine));
-                            command.Parameters.Add(new SQLiteParameter("@noteLayer", noteScore.noteLayer));
+                            command.Parameters.Add(new SQLiteParameter("@noteLayer", (int)noteScore.noteLayer));
                             command.Parameters.Add(new SQLiteParameter("@speedOK", noteScore.speedOK == true ? 1 : 0));
                             command.Parameters.Add(new SQLiteParameter("@directionOK", noteScore.directionOK == null ? null : (noteScore.directionOK == true ? 1 : (int?)0)));
                             command.Parameters.Add(new SQLiteParameter("@saberTypeOK", noteScore.saberTypeOK == null ? null : (noteScore.saberTypeOK == true ? 1 : (int?)0)));
                             command.Parameters.Add(new SQLiteParameter("@wasCutTooSoon", noteScore.wasCutTooSoon == true ? 1 : 0));
                             command.Parameters.Add(new SQLiteParameter("@initialScore", noteScore.initialScore));
-                            command.Parameters.Add(new SQLiteParameter("@beforeScore", noteScore.beforeScore));
-                            command.Parameters.Add(new SQLiteParameter("@afterScore", noteScore.afterScore));
+                            command.Parameters.Add(new SQLiteParameter("@beforeScore", noteScore.finalScore - noteScore.cutDistanceScore));
+                            command.Parameters.Add(new SQLiteParameter("@afterScore", noteScore.finalScore - noteScore.initialScore));
                             command.Parameters.Add(new SQLiteParameter("@cutDistanceScore", noteScore.cutDistanceScore));
                             command.Parameters.Add(new SQLiteParameter("@finalScore", noteScore.finalScore));
                             command.Parameters.Add(new SQLiteParameter("@cutMultiplier", noteScore.cutMultiplier));
@@ -446,7 +447,7 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(new SQLiteParameter("@saberDirX", noteScore.saberDirX));
                             command.Parameters.Add(new SQLiteParameter("@saberDirY", noteScore.saberDirY));
                             command.Parameters.Add(new SQLiteParameter("@saberDirZ", noteScore.saberDirZ));
-                            command.Parameters.Add(new SQLiteParameter("@saberType", noteScore.saberType));
+                            command.Parameters.Add(new SQLiteParameter("@saberType", noteScore.saberType.ToString()));
                             command.Parameters.Add(new SQLiteParameter("@swingRating", noteScore.swingRating));
                             command.Parameters.Add(new SQLiteParameter("@swingRatingFullyCut", noteScore.swingRatingFullyCut));
                             command.Parameters.Add(new SQLiteParameter("@timeDeviation", noteScore.timeDeviation));
@@ -499,7 +500,6 @@ namespace DataRecorder.DataBases
                     this._connection.Close();
                 }
             }
-            Logger.Debug(Utility.GetCurrentTime().ToString());
         }
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataRecorder.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// [Game] イベント名
         /// </summary>
-        public string bs_event { get; set; } = "";
+        public BeatSaberEvent? bs_event { get; set; } = BeatSaberEvent.Menu;
 
         /// <summary>
         /// [Game] イベント発生時間(UNIX time[ms])
@@ -39,7 +40,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// [Performance] 現在のランク
         /// </summary>
-        public string rank { get; set; } = "E";
+        public RankModel.Rank rank { get; set; } = RankModel.Rank.E;
 
         /// <summary>
         /// [Performance] 現在処理したノーツ数
@@ -102,14 +103,14 @@ namespace DataRecorder.Models
         public int? noteID { get; set; } = null;
 
         /// <summary>
-        /// [NoteCut] ノーツの種類 "NoteA" | "NoteB" | "GhostNote" | "Bomb"
+        /// [NoteCut] ノーツタイプ(noteID判定用)
         /// </summary>
-        public string noteType { get; set; } = null;
+        public ColorType colorType { get; set; } = ColorType.ColorA;
 
         /// <summary>
         /// [NoteCut] ノーツの矢印種類 "Up" | "Down" | "Left" | "Right" | "UpLeft" | "UpRight" | "DownLeft" | "DownRight" | "Any" | "None"
         /// </summary>
-        public string noteCutDirection { get; set; } = null;
+        public NoteCutDirection? noteCutDirection { get; set; } = null;
 
         /// <summary>
         /// [NoteCut] 左から右へのノーツの水平位置[0..3]
@@ -119,7 +120,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// [NoteCut] 下から上へのノーツの垂直位置[0..2]
         /// </summary>
-        public int? noteLayer { get; set; } = null;
+        public NoteLineLayer? noteLayer { get; set; } = null;
 
         /// <summary>
         /// [NoteCut] カット速度は十分に速かった
@@ -145,16 +146,6 @@ namespace DataRecorder.Models
         /// [NoteCut] カット前のスイングのスコアとノーツ中心カットの合計[max85]。爆弾の場合はnull。
         /// </summary>
         public int? initialScore { get; set; } = null;
-
-        /// <summary>
-        /// [NoteCut] カット前のスイングのスコア[max70]。爆弾の場合はnull。
-        /// </summary>
-        public int? beforeScore { get; set; } = null;
-
-        /// <summary>
-        /// [NoteCut] カット後のスイングのスコア[max30]。爆弾の場合はnull。
-        /// </summary>
-        public int? afterScore { get; set; } = null;
 
         /// <summary>
         /// [NoteCut] ノーツ中心カットのスコア[max15]。  爆弾の場合はnull。
@@ -194,7 +185,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// [NoteCut] ノーツをカットするために使用されるセイバー "SaberA" | "SaberB"
         /// </summary>
-        public string saberType { get; set; } = null;
+        public SaberType? saberType { get; set; } = null;
 
         /// <summary>
         /// [NoteCut] ゲームのスイング評価。カット前の評価。爆弾の場合は-1。
@@ -255,11 +246,6 @@ namespace DataRecorder.Models
         /// [NoteCut] 次のノーツまでの時間（秒）
         /// </summary>
         public float? timeToNextBasicNote { get; set; } = null;
-
-        /// <summary>
-        /// ノーツタイプ(noteID判定用)
-        /// </summary>
-        public int colorType { get; set; } = 0;
     }
     /// <summary>
     /// エネルギー変化保持内容
@@ -283,9 +269,9 @@ namespace DataRecorder.Models
     {
         public float time { get; set; } = 0;
         public int lineIndex { get; set; } = 0;
-        public int noteLineLayer { get; set; } = 0;
-        public int colorType { get; set; } = 0;
-        public string cutDirection { get; set; } = "";
+        public NoteLineLayer noteLineLayer { get; set; } = NoteLineLayer.Base;
+        public ColorType colorType { get; set; } = ColorType.None;
+        public NoteCutDirection cutDirection { get; set; } = NoteCutDirection.None;
         public float duration { get; set; } = 0;
     }
 }

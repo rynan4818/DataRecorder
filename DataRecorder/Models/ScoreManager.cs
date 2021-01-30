@@ -1,5 +1,6 @@
 ﻿using DataRecorder.Interfaces;
 using DataRecorder.Util;
+using DataRecorder.Enums;
 using BS_Utils.Gameplay;
 using IPA.Utilities;
 using System;
@@ -53,18 +54,18 @@ namespace DataRecorder.Models
 
         public void OnGamePause()
         {
-            this._gameStatus.cleared = "pause";
+            this._gameStatus.cleared = BeatSaberEvent.Pause;
             this._gameStatus.paused = Utility.GetCurrentTime();
             this._gameStatus.endTime = this._gameStatus.paused;
             this._gameStatus.pauseCount++;
-            this._repository.PaseEventAdd(this._gameStatus.cleared);
+            this._repository.PauseEventAdd(BeatSaberEvent.Pause);
         }
 
         public void OnGameResume()
         {
             this._gameStatus.start = Utility.GetCurrentTime() - (long)(audioTimeSyncController.songTime * 1000f / this._gameStatus.songSpeedMultiplier);
             this._gameStatus.paused = 0;
-            this._repository.PaseEventAdd("resume");
+            this._repository.PauseEventAdd(BeatSaberEvent.Resume);
         }
 
         public void OnNoteWasCut(NoteData noteData, NoteCutInfo noteCutInfo, int multiplier)
@@ -72,13 +73,11 @@ namespace DataRecorder.Models
             // Event order: combo, multiplier, scoreController.noteWasCut, (LateUpdate) scoreController.scoreDidChange, afterCut, (LateUpdate) scoreController.scoreDidChange
 
             var gameStatus = this._gameStatus;
-            var notescore = this._gameStatus.NoteDataGet();
+            var notescore = gameStatus.NoteDataGet();
 
             if (noteData.colorType != ColorType.None && noteCutInfo.allIsOK) {
                 gameStatus.passedNotes++;
                 gameStatus.hitNotes++;
-                notescore.passedNotes++;
-                notescore.hitNotes++;
 
                 List<CutScoreBuffer> list = (List<CutScoreBuffer>)afterCutScoreBuffersField.GetValue(scoreController);
                 foreach (CutScoreBuffer acsb in list) {
@@ -109,18 +108,14 @@ namespace DataRecorder.Models
             if (noteData.colorType == ColorType.None) {
                 gameStatus.passedBombs++;
                 gameStatus.hitBombs++;
-                notescore.passedBombs++;
-                notescore.hitBombs++;
 
-                notescore.bs_event = "bombCut";
+                notescore.bs_event = BeatSaberEvent.BombCut;
             }
             else {
                 gameStatus.passedNotes++;
                 gameStatus.missedNotes++;
-                notescore.passedNotes++;
-                notescore.missedNotes++;
 
-                notescore.bs_event = "noteMissed";
+                notescore.bs_event = BeatSaberEvent.NoteMissed;
             }
             gameStatus.NoteDataIndexUp();
         }
@@ -151,7 +146,7 @@ namespace DataRecorder.Models
             if (noteCutTiming.TryRemove(noteCutInfo, out var time)) {
                 notescore.cutTime = time;
             }
-            notescore.bs_event = "noteFullyCut";
+            notescore.bs_event = BeatSaberEvent.NoteFullyCut;
             this._gameStatus.NoteDataIndexUp();
 
             acsb.didFinishEvent -= OnNoteWasFullyCut;
@@ -160,16 +155,13 @@ namespace DataRecorder.Models
         private void SetNoteCutStatus(NoteData noteData, NoteCutInfo noteCutInfo = null, bool initialCut = true)
         {
             var gameStatus = this._gameStatus;
-
-            //gameStatus.ResetNoteCut();
-
             var notescore = gameStatus.NoteDataGet();
+
             // Backwards compatibility for <1.12.1
-            notescore.colorType = (int)noteData.colorType;
-            notescore.noteType = noteData.colorType == ColorType.None ? "Bomb" : noteData.colorType == ColorType.ColorA ? "NoteA" : noteData.colorType == ColorType.ColorB ? "NoteB" : noteData.colorType.ToString();
-            notescore.noteCutDirection = noteData.cutDirection.ToString();
+            notescore.colorType = noteData.colorType;
+            notescore.noteCutDirection = noteData.cutDirection;
             notescore.noteLine = noteData.lineIndex;
-            notescore.noteLayer = (int)noteData.noteLineLayer;
+            notescore.noteLayer = noteData.noteLineLayer;
             // If long notes are ever introduced, this name will make no sense
             notescore.timeToNextBasicNote = noteData.timeToNextColorNote;
             notescore.time = Utility.GetCurrentTime();
@@ -183,7 +175,7 @@ namespace DataRecorder.Models
                 notescore.saberDirX = noteCutInfo.saberDir[0];
                 notescore.saberDirY = noteCutInfo.saberDir[1];
                 notescore.saberDirZ = noteCutInfo.saberDir[2];
-                notescore.saberType = noteCutInfo.saberType.ToString();
+                notescore.saberType = noteCutInfo.saberType;
                 notescore.swingRating = noteCutInfo.swingRatingCounter == null ? -1 : noteCutInfo.swingRatingCounter.beforeCutRating;
                 notescore.swingRatingFullyCut =  noteCutInfo.swingRatingCounter == null ? -1 : initialCut ? 0 : noteCutInfo.swingRatingCounter.afterCutRating;
                 notescore.timeDeviation = noteCutInfo.timeDeviation;
@@ -208,17 +200,14 @@ namespace DataRecorder.Models
 
             if (noteData.colorType == ColorType.None) {
                 this._gameStatus.passedBombs++;
-                notescore.passedBombs++;
 
-                notescore.bs_event = "bombMissed";
+                notescore.bs_event = BeatSaberEvent.BombMissed;
             }
             else {
                 this._gameStatus.passedNotes++;
                 this._gameStatus.missedNotes++;
-                notescore.passedNotes++;
-                notescore.missedNotes++;
 
-                notescore.bs_event = "noteMissed";
+                notescore.bs_event = BeatSaberEvent.NoteMissed;
             }
             this._gameStatus.NoteDataIndexUp();
         }
@@ -226,39 +215,27 @@ namespace DataRecorder.Models
         public void OnScoreDidChange(int scoreBeforeMultiplier, int scoreAfterMultiplier)
         {
             var gameStatus = this._gameStatus;
-            var notescore = this._gameStatus.NoteDataGet();
 
             gameStatus.score = scoreAfterMultiplier;
-            notescore.score = scoreAfterMultiplier;
 
             int currentMaxScoreBeforeMultiplier = ScoreModel.MaxRawScoreForNumberOfNotes(gameStatus.passedNotes);
             gameStatus.currentMaxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
-            notescore.currentMaxScore = gameStatus.currentMaxScore;
 
-            RankModel.Rank rank = RankModel.GetRankForScore(scoreBeforeMultiplier, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
-            gameStatus.rank = RankModel.GetRankName(rank);
-            notescore.rank = gameStatus.rank;
+            gameStatus.rank = RankModel.GetRankForScore(scoreBeforeMultiplier, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
         }
 
         public void OnComboDidChange(int combo)
         {
-            var notescore = this._gameStatus.NoteDataGet();
-
             this._gameStatus.combo = combo;
-            notescore.combo = combo;
             // public int ScoreController#maxCombo
             this._gameStatus.maxCombo = scoreController.maxCombo;
-            notescore.maxCombo = this._gameStatus.maxCombo;
         }
 
         public void OnEnergyDidChange(float energy)
         {
-            var notescore = this._gameStatus.NoteDataGet();
-
             this._gameStatus.batteryEnergy = gameEnergyCounter.batteryEnergy;
-            notescore.batteryEnergy = this._gameStatus.batteryEnergy;
-
             this._gameStatus.energy = energy;
+
             var energyData = this._gameStatus.EnergyDataGet();
             energyData.energy = energy;
             energyData.time = Utility.GetCurrentTime();
@@ -267,25 +244,20 @@ namespace DataRecorder.Models
 
         public void OnMultiplierDidChange(int multiplier, float multiplierProgress)
         {
-            var notescore = this._gameStatus.NoteDataGet();
-
             this._gameStatus.multiplier = multiplier;
-            notescore.multiplier = multiplier;
-
             this._gameStatus.multiplierProgress = multiplierProgress;
-            notescore.multiplierProgress = multiplierProgress;
         }
 
         public void OnLevelFinished()
         {
-            this._gameStatus.cleared = "finished";
+            this._gameStatus.cleared = BeatSaberEvent.Finished;
             this._gameStatus.endTime = Utility.GetCurrentTime();
             this._gameStatus.endFlag = 1;
         }
 
         public void OnLevelFailed()
         {
-            this._gameStatus.cleared = "failed";
+            this._gameStatus.cleared = BeatSaberEvent.Failed;
             this._gameStatus.endTime = Utility.GetCurrentTime();
             this._gameStatus.endFlag = 1;
         }
@@ -327,54 +299,68 @@ namespace DataRecorder.Models
         [Inject]
         private void Constractor(DiContainer container)
         {
+            Logger.Debug("Constractor call");
+            Logger.Debug(Utility.GetCurrentTime().ToString());
             try {
-                scoreController = container.Resolve<ScoreController>();
-                gameplayModifiers = container.Resolve<GameplayModifiers>();
-                audioTimeSyncController = container.Resolve<AudioTimeSyncController>();
-                gameSongController = container.Resolve<GameSongController>();
-                gameEnergyCounter = container.Resolve<GameEnergyCounter>();
-                gameplayModifiersSO = this.scoreController.GetField<GameplayModifiersModelSO, ScoreController>("_gameplayModifiersModel");
+                this.scoreController = container.Resolve<ScoreController>();
+                this.gameplayModifiers = container.Resolve<GameplayModifiers>();
+                this.audioTimeSyncController = container.Resolve<AudioTimeSyncController>();
+                this.gameSongController = container.Resolve<GameSongController>();
+                this.gameEnergyCounter = container.Resolve<GameEnergyCounter>();
+                this.gameplayModifiersSO = this.scoreController.GetField<GameplayModifiersModelSO, ScoreController>("_gameplayModifiersModel");
             }
             catch (Exception e) {
                 Logger.Error(e);
                 return;
             }
-            pauseController = container.TryResolve<PauseController>();
+            this.pauseController = container.TryResolve<PauseController>();
 
             //各種イベントの追加
             // FIXME: 曲が終わったときには、このすべての参照先をきれいにしておく必要があります。(FIXME: i should probably clean references to all this when song is over)
-            gameplayCoreSceneSetupData = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData;
+            this.gameplayCoreSceneSetupData = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData;
 
-            Logger.Info("scoreController=" + scoreController);
+            Logger.Info("scoreController=" + this.scoreController);
 
             // イベントリスナーの登録 (Register event listeners)
             // マルチプレイヤーでは PauseController が存在しない (PauseController doesn't exist in multiplayer)
-            if (pauseController != null) {
-                Logger.Info("pauseController=" + pauseController);
+            if (this.pauseController != null) {
+                Logger.Info("pauseController=" + this.pauseController);
                 // public event Action PauseController#didPauseEvent;
-                pauseController.didPauseEvent += this.OnGamePause;
+                this.pauseController.didPauseEvent += this.OnGamePause;
                 // public event Action PauseController#didResumeEvent;
-                pauseController.didResumeEvent += this.OnGameResume;
+                this.pauseController.didResumeEvent += this.OnGameResume;
             }
             // public ScoreController#noteWasCutEvent<NoteData, NoteCutInfo, int multiplier> // AfterCutScoreBufferが作成された後に呼び出される (called after AfterCutScoreBuffer is created)
-            scoreController.noteWasCutEvent += this.OnNoteWasCut;
+            this.scoreController.noteWasCutEvent += this.OnNoteWasCut;
             // public ScoreController#noteWasMissedEvent<NoteData, int multiplier>
-            scoreController.noteWasMissedEvent += this.OnNoteWasMissed;
+            this.scoreController.noteWasMissedEvent += this.OnNoteWasMissed;
             // public ScoreController#scoreDidChangeEvent<int, int> // score
-            scoreController.scoreDidChangeEvent += this.OnScoreDidChange;
+            this.scoreController.scoreDidChangeEvent += this.OnScoreDidChange;
             // public ScoreController#comboDidChangeEvent<int> // combo
-            scoreController.comboDidChangeEvent += this.OnComboDidChange;
+            this.scoreController.comboDidChangeEvent += this.OnComboDidChange;
             // public ScoreController#multiplierDidChangeEvent<int, float> // multiplier, progress [0..1]
-            scoreController.multiplierDidChangeEvent += this.OnMultiplierDidChange;
+            this.scoreController.multiplierDidChangeEvent += this.OnMultiplierDidChange;
             // public event Action GameSongController#songDidFinishEvent;
-            gameSongController.songDidFinishEvent += this.OnLevelFinished;
+            this.gameSongController.songDidFinishEvent += this.OnLevelFinished;
             // public event Action GameEnergyCounter#gameEnergyDidReach0Event;
-            gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
+            this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
-            gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
+            this.gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
 
+            Logger.Debug(Utility.GetCurrentTime().ToString());
+        }
+
+        /// <summary>
+        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
+        /// </summary>
+        public void Initialize()
+        {
+            Logger.Debug("Initialize call");
+            Logger.Debug(Utility.GetCurrentTime().ToString());
+
+            //BeatMapデータの登録
             this._gameStatus.ResetGameStatus();
-            this._gameStatus.scene = "Song";
+            this._gameStatus.scene = BeatSaberScene.Song;
 
             IDifficultyBeatmap diff = gameplayCoreSceneSetupData.difficultyBeatmap;
             IBeatmapLevel level = diff.level;
@@ -388,6 +374,23 @@ namespace DataRecorder.Models
 
             float songSpeedMul = gameplayModifiers.songSpeedMul;
             if (practiceSettings != null) songSpeedMul = practiceSettings.songSpeedMul;
+
+            // HTTPStatus 1.12.1以下との下位互換性のために、NoteDataからidへのマッピングを生成します。 [Generate NoteData to id mappings for backwards compatiblity with <1.12.1]
+            var beatmapObjectsData = diff.beatmapData.beatmapObjectsData;
+
+            foreach (BeatmapObjectData beatmapObjectData in beatmapObjectsData) {
+                if (beatmapObjectData is NoteData noteData) {
+                    var mapdata = this._gameStatus.MapDataGet();
+                    mapdata.time = noteData.time;
+                    mapdata.lineIndex = noteData.lineIndex;
+                    mapdata.noteLineLayer = noteData.noteLineLayer;
+                    mapdata.colorType = noteData.colorType;
+                    mapdata.cutDirection = noteData.cutDirection;
+                    mapdata.duration = noteData.duration;
+                    this._gameStatus.MapDataIndexUp();
+                }
+            }
+
             float modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers, gameEnergyCounter.energy);
 
             this._gameStatus.songName = level.songName;
@@ -411,19 +414,19 @@ namespace DataRecorder.Models
             this._gameStatus.environmentName = level.environmentInfo.sceneInfo.sceneName;
 
             this._gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(diff.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
-            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy).ToString();
+            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
 
             this._gameStatus.modifierMultiplier = modifierMultiplier;
             this._gameStatus.songSpeedMultiplier = songSpeedMul;
             this._gameStatus.batteryLives = gameEnergyCounter.batteryLives;
 
-            this._gameStatus.modObstacles = gameplayModifiers.enabledObstacleType.ToString();
+            this._gameStatus.modObstacles = gameplayModifiers.enabledObstacleType;
             this._gameStatus.modInstaFail = gameplayModifiers.instaFail;
             this._gameStatus.modNoFail = gameplayModifiers.noFailOn0Energy;
             this._gameStatus.modBatteryEnergy = gameplayModifiers.energyType == GameplayModifiers.EnergyType.Battery;
             this._gameStatus.modDisappearingArrows = gameplayModifiers.disappearingArrows;
             this._gameStatus.modNoBombs = gameplayModifiers.noBombs;
-            this._gameStatus.modSongSpeed = gameplayModifiers.songSpeed.ToString();
+            this._gameStatus.modSongSpeed = gameplayModifiers.songSpeed;
             this._gameStatus.modNoArrows = gameplayModifiers.noArrows;
             this._gameStatus.modGhostNotes = gameplayModifiers.ghostNotes;
             this._gameStatus.modFailOnSaberClash = gameplayModifiers.failOnSaberClash;
@@ -439,14 +442,10 @@ namespace DataRecorder.Models
             this._gameStatus.advancedHUD = playerSettings.advancedHud;
             this._gameStatus.autoRestart = playerSettings.autoRestart;
             this._gameStatus.startTime = Utility.GetCurrentTime();
-            this._gameStatus.cleared = "menu";
-        }
-
-        /// <summary>
-        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
-        /// </summary>
-        public void Initialize()
-        {
+            this._gameStatus.cleared = BeatSaberEvent.Menu;
+            this._gameStatus.NoteDataSizeCheck();
+            this._gameStatus.MapDataSizeCheck();
+            Logger.Debug(Utility.GetCurrentTime().ToString());
         }
 
         /// <summary>
@@ -462,6 +461,7 @@ namespace DataRecorder.Models
 
                     //各種イベントの削除
                     Logger.Debug("dispose call");
+                    Logger.Debug(Utility.GetCurrentTime().ToString());
                     try {
                         this._repository.PlayDataAdd();
 
@@ -495,6 +495,7 @@ namespace DataRecorder.Models
                     catch (Exception e) {
                         Logger.Error(e);
                     }
+                    Logger.Debug(Utility.GetCurrentTime().ToString());
                 }
 
                 // TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします

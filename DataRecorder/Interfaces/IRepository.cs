@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataRecorder.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace DataRecorder.Interfaces
         /// <summary>
         /// pause , resume イベント記録
         /// </summary>
-        void PaseEventAdd(string bs_event);
+        void PauseEventAdd(BeatSaberEvent bs_event);
 
         /// <summary>
         /// プレイデータの記録

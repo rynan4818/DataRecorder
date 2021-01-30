@@ -1,4 +1,5 @@
 using System;
+using DataRecorder.Enums;
 
 namespace DataRecorder.Models
 {
@@ -36,7 +37,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// クリア条件
         /// </summary>
-        public string cleared { get; set; } = null;
+        public BeatSaberEvent? cleared { get; set; } = null;
 
         /// <summary>
         /// 終了条件
@@ -61,7 +62,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// StatusObject[Game] mode : ゲームシーン
         /// </summary>
-        public string scene { get; set; } = null;
+        public BeatSaberScene? scene { get; set; } = null;
 
         /// <summary>
         /// StatusObject[BeatMap] 曲名
@@ -151,7 +152,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// StatusObject[BeatMap] 現在のModでの最大ランク
         /// </summary>
-        public string maxRank { get; set; } = "E";
+        public RankModel.Rank maxRank { get; set; } = RankModel.Rank.E;
 
         /// <summary>
         /// StatusObject[BeatMap] 譜面の要求環境
@@ -171,7 +172,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// StatusObject[Performance] 現在のランク
         /// </summary>
-        public string rank { get; set; } = "E";
+        public RankModel.Rank rank { get; set; } = RankModel.Rank.E;
 
         /// <summary>
         /// StatusObject[Performance] 現在処理したノーツ数
@@ -241,7 +242,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// StatusObject[Mods] 壁の有無
         /// </summary>
-        public string modObstacles { get; set; } = "All";
+        public GameplayModifiers.EnabledObstacleType modObstacles { get; set; } = GameplayModifiers.EnabledObstacleType.All;
 
         /// <summary>
         /// StatusObject[Mods] ノーミス
@@ -276,7 +277,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// StatusObject[Mods] 曲の速度
         /// </summary>
-        public string modSongSpeed { get; set; } = "Normal";
+        public GameplayModifiers.SongSpeed modSongSpeed { get; set; } = GameplayModifiers.SongSpeed.Normal;
 
         /// <summary>
         /// StatusObject[Mods] 曲の速度のMod乗数
@@ -395,15 +396,29 @@ namespace DataRecorder.Models
         /// </summary>
         private MapDataEntity[] mapDatas = new MapDataEntity[defaultMapDataSize];
 
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列の初期化済み数
+        /// </summary>
+        private int noteScoresInitCount = 0;
+
+        /// <summary>
+        /// 譜面データ用配列の初期化済み数
+        /// </summary>
+        private int mapDatasInitCount = 0;
+
         #endregion
         #region // コンストラクタ
         public GameStatus()
         {
-            // ノーツ・エネルギー格納変数の初期化
+            // ノーツ・エネルギー・譜面格納変数の初期化
             for (int i = 0; i < defaultNoteScoreSize; ++i)
-                noteScores[i] = new NoteDataEntity();
+                this.noteScores[i] = new NoteDataEntity();
+            this.noteScoresInitCount = defaultNoteScoreSize;
             for (int i = 0; i < defaultEnergyDataSize; ++i)
-                energyDatas[i] = new EnergyDataEntity();
+                this.energyDatas[i] = new EnergyDataEntity();
+            for (int i = 0; i < defaultMapDataSize; ++i)
+                this.mapDatas[i] = new MapDataEntity();
+            this.mapDatasInitCount = defaultMapDataSize;
         }
         #endregion
         #region // パブリックメソッド
@@ -412,7 +427,7 @@ namespace DataRecorder.Models
         /// </summary>
         public void EnergyDataResize()
         {
-            Array.Resize(ref energyDatas, energyDatas.Length + addEnergyDataSize);
+            Array.Resize(ref this.energyDatas, this.energyDatas.Length + addEnergyDataSize);
         }
 
         /// <summary>
@@ -420,7 +435,7 @@ namespace DataRecorder.Models
         /// </summary>
         public void NoteDataResize(int size)
         {
-            Array.Resize(ref noteScores, size + addNoteScoreSize);
+            Array.Resize(ref this.noteScores, size + addNoteScoreSize);
         }
 
         /// <summary>
@@ -428,7 +443,7 @@ namespace DataRecorder.Models
         /// </summary>
         public void MapDataResize(int size)
         {
-            Array.Resize(ref mapDatas, size + addMapDataSize);
+            Array.Resize(ref this.mapDatas, size + addMapDataSize);
         }
 
         /// <summary>
@@ -436,9 +451,11 @@ namespace DataRecorder.Models
         /// </summary>
         public NoteDataEntity NoteDataGet()
         {
-            if (noteScores[noteIndex] == null)
-                noteScores[noteIndex] = new NoteDataEntity();
-            return noteScores[noteIndex];
+            if (this.noteScores[this.noteIndex] == null) {
+                this.noteScores[this.noteIndex] = new NoteDataEntity();
+                this.noteScoresInitCount = this.noteIndex + 1;
+            }
+            return this.noteScores[this.noteIndex];
         }
 
         /// <summary>
@@ -446,9 +463,9 @@ namespace DataRecorder.Models
         /// </summary>
         public EnergyDataEntity EnergyDataGet()
         {
-            if (energyDatas[energyIndex] == null)
-                energyDatas[energyIndex] = new EnergyDataEntity();
-            return energyDatas[energyIndex];
+            if (this.energyDatas[this.energyIndex] == null)
+                this.energyDatas[this.energyIndex] = new EnergyDataEntity();
+            return this.energyDatas[this.energyIndex];
         }
 
         /// <summary>
@@ -456,9 +473,9 @@ namespace DataRecorder.Models
         /// </summary>
         public MapDataEntity MapDataGet()
         {
-            if (mapDatas[mapIndex] == null)
-                mapDatas[mapIndex] = new MapDataEntity();
-            return mapDatas[mapIndex];
+            if (this.mapDatas[this.mapIndex] == null)
+                this.mapDatas[this.mapIndex] = new MapDataEntity();
+            return this.mapDatas[this.mapIndex];
         }
 
         /// <summary>
@@ -466,10 +483,24 @@ namespace DataRecorder.Models
         /// </summary>
         public void NoteDataIndexUp()
         {
-            noteIndex++;
-            if (noteIndex >= noteScores.Length) {
-                NoteDataResize(noteScores.Length);
-            }
+            this.noteIndex++;
+            if (this.noteIndex >= this.noteScores.Length)
+                this.NoteDataResize(this.noteScores.Length);
+            var performance = this.NoteDataGet();
+            performance.score = this.score;
+            performance.currentMaxScore = this.currentMaxScore;
+            performance.rank = this.rank;
+            performance.passedNotes = this.passedNotes;
+            performance.hitNotes = this.hitNotes;
+            performance.missedNotes = this.missedNotes;
+            performance.lastNoteScore = this.lastNoteScore;
+            performance.passedBombs = this.passedBombs;
+            performance.hitBombs = this.hitBombs;
+            performance.combo = this.combo;
+            performance.maxCombo = this.maxCombo;
+            performance.multiplier = this.multiplier;
+            performance.multiplierProgress = this.multiplierProgress;
+            performance.batteryEnergy = this.batteryEnergy;
         }
 
         /// <summary>
@@ -477,10 +508,9 @@ namespace DataRecorder.Models
         /// </summary>
         public void EnergyDataIndexUp()
         {
-            energyIndex++;
-            if (energyIndex >= energyDatas.Length) {
-                EnergyDataResize();
-            }
+            this.energyIndex++;
+            if (this.energyIndex >= this.energyDatas.Length)
+                this.EnergyDataResize();
         }
 
         /// <summary>
@@ -488,12 +518,40 @@ namespace DataRecorder.Models
         /// </summary>
         public void MapDataIndexUp()
         {
-            mapIndex++;
-            if (mapIndex >= mapDatas.Length) {
-                MapDataResize(mapDatas.Length);
+            this.mapIndex++;
+            if (this.mapIndex >= this.mapDatas.Length)
+                this.MapDataResize(this.mapDatas.Length);
+        }
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列のサイズ確認
+        /// </summary>
+        public void NoteDataSizeCheck()
+        {
+            if (this.notesCount + this.bombsCount >= this.noteScores.Length) {
+                this.NoteDataResize(this.notesCount + this.bombsCount);
+                while (this.noteScoresInitCount < this.noteScores.Length) {
+                    if (this.noteScores[this.noteScoresInitCount] == null) {
+                        this.noteScores[this.noteScoresInitCount] = new NoteDataEntity();
+                        this.noteScoresInitCount++;
+                    }
+                }
             }
         }
-
+        /// <summary>
+        /// 譜面データ配列のサイズ確認
+        /// </summary>
+        public void MapDataSizeCheck()
+        {
+            if (this.notesCount + this.bombsCount >= this.mapDatas.Length) {
+                this.MapDataResize(this.notesCount + this.bombsCount);
+                while (this.mapDatasInitCount < this.mapDatas.Length) {
+                    if (this.mapDatas[this.mapDatasInitCount] == null) {
+                        this.mapDatas[this.mapDatasInitCount] = new MapDataEntity();
+                        this.mapDatasInitCount++;
+                    }
+                }
+            }
+        }
         /// <summary>
         /// GameStatusのリセット
         /// </summary>
@@ -524,11 +582,11 @@ namespace DataRecorder.Models
             this.bombsCount = 0;
             this.obstaclesCount = 0;
             this.maxScore = 0;
-            this.maxRank = "E";
+            this.maxRank = RankModel.Rank.E;
             this.environmentName = null;
             this.score = 0;
             this.currentMaxScore = 0;
-            this.rank = "E";
+            this.rank = RankModel.Rank.E;
             this.passedNotes = 0;
             this.hitNotes = 0;
             this.missedNotes = 0;
@@ -542,14 +600,14 @@ namespace DataRecorder.Models
             this.batteryEnergy = 1;
             this.energy = 0;
             this.modifierMultiplier = 1f;
-            this.modObstacles = "All";
+            this.modObstacles = GameplayModifiers.EnabledObstacleType.All;
             this.modInstaFail = false;
             this.modNoFail = false;
             this.modBatteryEnergy = false;
             this.batteryLives = 1;
             this.modDisappearingArrows = false;
             this.modNoBombs = false;
-            this.modSongSpeed = "Normal";
+            this.modSongSpeed = GameplayModifiers.SongSpeed.Normal;
             this.songSpeedMultiplier = 1f;
             this.modNoArrows = false;
             this.modGhostNotes = false;
@@ -564,8 +622,9 @@ namespace DataRecorder.Models
             this.noHUD = false;
             this.advancedHUD = false;
             this.autoRestart = false;
-            ResetNoteCut();
-            ResetEnergy();
+            this.ResetNoteCut();
+            this.ResetEnergy();
+            this.ResetMap();
         }
         #endregion
         #region // プライベートメソッド
@@ -574,63 +633,62 @@ namespace DataRecorder.Models
         /// </summary>
         private void ResetNoteCut()
         {
-            noteIndex = 0;
-            for (int i = 0; i < noteScores.Length; i++) {
-                if (noteScores[i] == null) {
-                    noteScores[i] = new NoteDataEntity();
+            this.noteIndex = 0;
+            for (int i = 0; i < this.noteScores.Length; i++) {
+                if (this.noteScores[i] == null) {
+                    this.noteScores[i] = new NoteDataEntity();
                 }
                 else {
-                    noteScores[i].bs_event = "";
-                    noteScores[i].time = 0;
-                    noteScores[i].cutTime = 0;
-                    noteScores[i].score = 0;
-                    noteScores[i].currentMaxScore = 0;
-                    noteScores[i].rank = "E";
-                    noteScores[i].passedNotes = 0;
-                    noteScores[i].hitNotes = 0;
-                    noteScores[i].missedNotes = 0;
-                    noteScores[i].lastNoteScore = 0;
-                    noteScores[i].passedBombs = 0;
-                    noteScores[i].hitBombs = 0;
-                    noteScores[i].combo = 0;
-                    noteScores[i].maxCombo = 0;
-                    noteScores[i].multiplier = 0;
-                    noteScores[i].multiplierProgress = 0;
-                    noteScores[i].batteryEnergy = 1;
-                    noteScores[i].noteID = null;
-                    noteScores[i].noteType = null;
-                    noteScores[i].noteCutDirection = null;
-                    noteScores[i].noteLine = null;
-                    noteScores[i].noteLayer = null;
-                    noteScores[i].speedOK = null;
-                    noteScores[i].directionOK = null;
-                    noteScores[i].saberTypeOK = null;
-                    noteScores[i].wasCutTooSoon = null;
-                    noteScores[i].initialScore = null;
-                    noteScores[i].beforeScore = null;
-                    noteScores[i].afterScore = null;
-                    noteScores[i].cutDistanceScore = null;
-                    noteScores[i].finalScore = null;
-                    noteScores[i].cutMultiplier = null;
-                    noteScores[i].saberSpeed = null;
-                    noteScores[i].saberDirX = null;
-                    noteScores[i].saberDirY = null;
-                    noteScores[i].saberDirZ = null;
-                    noteScores[i].saberType = null;
-                    noteScores[i].swingRating = null;
-                    noteScores[i].swingRatingFullyCut = null;
-                    noteScores[i].timeDeviation = null;
-                    noteScores[i].cutDirectionDeviation = null;
-                    noteScores[i].cutPointX = null;
-                    noteScores[i].cutPointY = null;
-                    noteScores[i].cutPointZ = null;
-                    noteScores[i].cutNormalX = null;
-                    noteScores[i].cutNormalY = null;
-                    noteScores[i].cutNormalZ = null;
-                    noteScores[i].cutDistanceToCenter = null;
-                    noteScores[i].timeToNextBasicNote = null;
+                    this.noteScores[i].bs_event = null;
+                    this.noteScores[i].time = 0;
+                    this.noteScores[i].cutTime = 0;
+                    this.noteScores[i].score = 0;
+                    this.noteScores[i].currentMaxScore = 0;
+                    this.noteScores[i].rank = RankModel.Rank.E;
+                    this.noteScores[i].passedNotes = 0;
+                    this.noteScores[i].hitNotes = 0;
+                    this.noteScores[i].missedNotes = 0;
+                    this.noteScores[i].lastNoteScore = 0;
+                    this.noteScores[i].passedBombs = 0;
+                    this.noteScores[i].hitBombs = 0;
+                    this.noteScores[i].combo = 0;
+                    this.noteScores[i].maxCombo = 0;
+                    this.noteScores[i].multiplier = 0;
+                    this.noteScores[i].multiplierProgress = 0;
+                    this.noteScores[i].batteryEnergy = 1;
+                    this.noteScores[i].noteID = null;
+                    this.noteScores[i].colorType = ColorType.ColorA;
+                    this.noteScores[i].noteCutDirection = null;
+                    this.noteScores[i].noteLine = null;
+                    this.noteScores[i].noteLayer = null;
+                    this.noteScores[i].speedOK = null;
+                    this.noteScores[i].directionOK = null;
+                    this.noteScores[i].saberTypeOK = null;
+                    this.noteScores[i].wasCutTooSoon = null;
+                    this.noteScores[i].initialScore = null;
+                    this.noteScores[i].cutDistanceScore = null;
+                    this.noteScores[i].finalScore = null;
+                    this.noteScores[i].cutMultiplier = null;
+                    this.noteScores[i].saberSpeed = null;
+                    this.noteScores[i].saberDirX = null;
+                    this.noteScores[i].saberDirY = null;
+                    this.noteScores[i].saberDirZ = null;
+                    this.noteScores[i].saberType = null;
+                    this.noteScores[i].swingRating = null;
+                    this.noteScores[i].swingRatingFullyCut = null;
+                    this.noteScores[i].timeDeviation = null;
+                    this.noteScores[i].cutDirectionDeviation = null;
+                    this.noteScores[i].cutPointX = null;
+                    this.noteScores[i].cutPointY = null;
+                    this.noteScores[i].cutPointZ = null;
+                    this.noteScores[i].cutNormalX = null;
+                    this.noteScores[i].cutNormalY = null;
+                    this.noteScores[i].cutNormalZ = null;
+                    this.noteScores[i].cutDistanceToCenter = null;
+                    this.noteScores[i].timeToNextBasicNote = null;
                 }
             }
+            this.noteScoresInitCount = this.noteScores.Length;
         }
 
         /// <summary>
@@ -638,16 +696,38 @@ namespace DataRecorder.Models
         /// </summary>
         private void ResetEnergy()
         {
-            energyIndex = 0;
-            for (int i = 0; i < energyDatas.Length; i++) {
-                if (energyDatas[i] == null) {
-                    energyDatas[i] = new EnergyDataEntity();
+            this.energyIndex = 0;
+            for (int i = 0; i < this.energyDatas.Length; i++) {
+                if (this.energyDatas[i] == null) {
+                    this.energyDatas[i] = new EnergyDataEntity();
                 }
                 else {
-                    energyDatas[i].time = 0;
-                    energyDatas[i].energy = 0;
+                    this.energyDatas[i].time = 0;
+                    this.energyDatas[i].energy = 0;
                 }
             }
+        }
+
+        /// <summary>
+        /// 譜面データ配列をリセット
+        /// </summary>
+        private void ResetMap()
+        {
+            this.mapIndex = 0;
+            for (int i = 0; i < this.mapDatas.Length; i++) {
+                if (this.mapDatas[i] == null) {
+                    this.mapDatas[i] = new MapDataEntity();
+                }
+                else {
+                    this.mapDatas[i].time = 0;
+                    this.mapDatas[i].lineIndex = 0;
+                    this.mapDatas[i].noteLineLayer = 0;
+                    this.mapDatas[i].colorType = 0;
+                    this.mapDatas[i].cutDirection = 0;
+                    this.mapDatas[i].duration = 0;
+                }
+            }
+            this.mapDatasInitCount = this.mapDatas.Length;
         }
 
         #endregion
