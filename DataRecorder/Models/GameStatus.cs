@@ -20,9 +20,24 @@ namespace DataRecorder.Models
         public int energyIndex { get; set; } = 0;
 
         /// <summary>
-        /// 譜面データ用配列のインデックス
+        /// 譜面データ用配列の現在のインデックス
         /// </summary>
         public int mapIndex { get; set; } = 0;
+
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列の最終インデックス
+        /// </summary>
+        public int noteEndIndex { get; set; } = 0;
+
+        /// <summary>
+        /// エネルギー変化格納用配列の最終インデックス
+        /// </summary>
+        public int energyEndIndex { get; set; } = 0;
+
+        /// <summary>
+        /// 譜面データ用配列の最終インデックス
+        /// </summary>
+        public int mapEndIndex { get; set; } = 0;
 
         /// <summary>
         /// 譜面開始時刻 (UNIX time[ms])
@@ -378,7 +393,7 @@ namespace DataRecorder.Models
         /// <summary>
         /// エネルギー変化格納用配列初期化サイズ
         /// </summary>
-        private const int defaultEnergyDataSize = 1000;
+        private const int defaultEnergyDataSize = 3000;
 
         /// <summary>
         /// エネルギー変化格納用配列追加サイズ
@@ -407,6 +422,11 @@ namespace DataRecorder.Models
         private int noteScoresInitCount = 0;
 
         /// <summary>
+        /// エネルギー変化格納配列の初期化済み数
+        /// </summary>
+        private int energyDataInitCount = 0;
+
+        /// <summary>
         /// 譜面データ用配列の初期化済み数
         /// </summary>
         private int mapDatasInitCount = 0;
@@ -427,30 +447,6 @@ namespace DataRecorder.Models
         }
         #endregion
         #region // パブリックメソッド
-        /// <summary>
-        /// エネルギー変化格納用配列のリサイズ
-        /// </summary>
-        public void EnergyDataResize()
-        {
-            Array.Resize(ref this.energyDatas, this.energyDatas.Length + addEnergyDataSize);
-        }
-
-        /// <summary>
-        /// ノーツ毎のスコア格納用配列のリサイズ
-        /// </summary>
-        public void NoteDataResize(int size)
-        {
-            Array.Resize(ref this.noteScores, size + addNoteScoreSize);
-        }
-
-        /// <summary>
-        /// 譜面データ用配列のリサイズ
-        /// </summary>
-        public void MapDataResize(int size)
-        {
-            Array.Resize(ref this.mapDatas, size + addMapDataSize);
-        }
-
         /// <summary>
         /// ノーツ毎のスコア格納用配列から現在のインデックスの内容を取り出す
         /// </summary>
@@ -488,9 +484,6 @@ namespace DataRecorder.Models
         /// </summary>
         public void NoteDataIndexUp()
         {
-            this.noteIndex++;
-            if (this.noteIndex >= this.noteScores.Length)
-                this.NoteDataResize(this.noteScores.Length);
             var performance = this.NoteDataGet();
             performance.score = this.score;
             performance.currentMaxScore = this.currentMaxScore;
@@ -506,6 +499,10 @@ namespace DataRecorder.Models
             performance.multiplier = this.multiplier;
             performance.multiplierProgress = this.multiplierProgress;
             performance.batteryEnergy = this.batteryEnergy;
+            this.noteIndex++;
+            if (this.noteIndex >= this.noteScores.Length)
+                this.NoteDataResize(this.noteScores.Length);
+            this.noteEndIndex++;
         }
 
         /// <summary>
@@ -515,7 +512,8 @@ namespace DataRecorder.Models
         {
             this.energyIndex++;
             if (this.energyIndex >= this.energyDatas.Length)
-                this.EnergyDataResize();
+                this.EnergyDataResize(this.energyDatas.Length);
+            this.energyEndIndex++;
         }
 
         /// <summary>
@@ -526,6 +524,7 @@ namespace DataRecorder.Models
             this.mapIndex++;
             if (this.mapIndex >= this.mapDatas.Length)
                 this.MapDataResize(this.mapDatas.Length);
+            this.mapEndIndex++;
         }
         /// <summary>
         /// ノーツ毎のスコア格納用配列のサイズ確認
@@ -538,6 +537,21 @@ namespace DataRecorder.Models
                     if (this.noteScores[this.noteScoresInitCount] == null) {
                         this.noteScores[this.noteScoresInitCount] = new NoteDataEntity();
                         this.noteScoresInitCount++;
+                    }
+                }
+            }
+        }
+        /// <summary>
+        /// エネルギー変化格納用配列のサイズ確認
+        /// </summary>
+        public void EnergyDataSizeCheck()
+        {
+            if (this.notesCount + this.bombsCount >= this.energyDatas.Length) {
+                this.EnergyDataResize(this.notesCount + this.bombsCount);
+                while (this.energyDataInitCount < this.energyDatas.Length) {
+                    if (this.energyDatas[this.energyDataInitCount] == null) {
+                        this.energyDatas[this.energyDataInitCount] = new EnergyDataEntity();
+                        this.energyDataInitCount++;
                     }
                 }
             }
@@ -664,17 +678,16 @@ namespace DataRecorder.Models
         /// </summary>
         private void ResetNoteCut()
         {
-            this.noteIndex = 0;
-            for (int i = 0; i < this.noteScores.Length; i++) {
+            for (int i = 0; i < this.noteEndIndex; i++) {
                 if (this.noteScores[i] == null) {
                     this.noteScores[i] = new NoteDataEntity();
                 }
                 else {
-                    this.noteScores[i].bs_event = null;
+                    this.noteScores[i].bs_event = BeatSaberEvent.Menu;
                     this.noteScores[i].time = 0;
                     this.noteScores[i].noteTime = 0;
                     this.noteScores[i].duration = 0;
-                    this.noteScores[i].cutTime = 0;
+                    this.noteScores[i].cutTime = null;
                     this.noteScores[i].score = 0;
                     this.noteScores[i].currentMaxScore = 0;
                     this.noteScores[i].rank = RankModel.Rank.E;
@@ -693,33 +706,35 @@ namespace DataRecorder.Models
                     this.noteScores[i].noteCutDirection = null;
                     this.noteScores[i].noteLine = null;
                     this.noteScores[i].noteLayer = null;
-                    this.noteScores[i].speedOK = null;
-                    this.noteScores[i].directionOK = null;
-                    this.noteScores[i].saberTypeOK = null;
-                    this.noteScores[i].wasCutTooSoon = null;
-                    this.noteScores[i].initialScore = null;
-                    this.noteScores[i].cutDistanceScore = null;
-                    this.noteScores[i].finalScore = null;
-                    this.noteScores[i].cutMultiplier = null;
-                    this.noteScores[i].saberSpeed = null;
-                    this.noteScores[i].saberDirX = null;
-                    this.noteScores[i].saberDirY = null;
-                    this.noteScores[i].saberDirZ = null;
+                    this.noteScores[i].speedOK = false;
+                    this.noteScores[i].directionOK = false;
+                    this.noteScores[i].saberTypeOK = false;
+                    this.noteScores[i].wasCutTooSoon = false;
+                    this.noteScores[i].initialScore = -1;
+                    this.noteScores[i].cutDistanceScore = -1;
+                    this.noteScores[i].finalScore = -1;
+                    this.noteScores[i].cutMultiplier = 0;
+                    this.noteScores[i].saberSpeed = 0;
+                    this.noteScores[i].saberDirX = 0;
+                    this.noteScores[i].saberDirY = 0;
+                    this.noteScores[i].saberDirZ = 0;
                     this.noteScores[i].saberType = null;
-                    this.noteScores[i].swingRating = null;
-                    this.noteScores[i].swingRatingFullyCut = null;
-                    this.noteScores[i].timeDeviation = null;
-                    this.noteScores[i].cutDirectionDeviation = null;
-                    this.noteScores[i].cutPointX = null;
-                    this.noteScores[i].cutPointY = null;
-                    this.noteScores[i].cutPointZ = null;
-                    this.noteScores[i].cutNormalX = null;
-                    this.noteScores[i].cutNormalY = null;
-                    this.noteScores[i].cutNormalZ = null;
-                    this.noteScores[i].cutDistanceToCenter = null;
-                    this.noteScores[i].timeToNextBasicNote = null;
+                    this.noteScores[i].swingRating = 0;
+                    this.noteScores[i].swingRatingFullyCut = 0;
+                    this.noteScores[i].timeDeviation = 0;
+                    this.noteScores[i].cutDirectionDeviation = 0;
+                    this.noteScores[i].cutPointX = 0;
+                    this.noteScores[i].cutPointY = 0;
+                    this.noteScores[i].cutPointZ = 0;
+                    this.noteScores[i].cutNormalX = 0;
+                    this.noteScores[i].cutNormalY = 0;
+                    this.noteScores[i].cutNormalZ = 0;
+                    this.noteScores[i].cutDistanceToCenter = 0;
+                    this.noteScores[i].timeToNextBasicNote = 0;
                 }
             }
+            this.noteIndex = 0;
+            this.noteEndIndex = 0;
             this.noteScoresInitCount = this.noteScores.Length;
         }
 
@@ -728,8 +743,7 @@ namespace DataRecorder.Models
         /// </summary>
         private void ResetEnergy()
         {
-            this.energyIndex = 0;
-            for (int i = 0; i < this.energyDatas.Length; i++) {
+            for (int i = 0; i < this.energyEndIndex; i++) {
                 if (this.energyDatas[i] == null) {
                     this.energyDatas[i] = new EnergyDataEntity();
                 }
@@ -738,6 +752,8 @@ namespace DataRecorder.Models
                     this.energyDatas[i].energy = 0;
                 }
             }
+            this.energyIndex = 0;
+            this.energyEndIndex = 0;
         }
 
         /// <summary>
@@ -745,8 +761,7 @@ namespace DataRecorder.Models
         /// </summary>
         private void ResetMap()
         {
-            this.mapIndex = 0;
-            for (int i = 0; i < this.mapDatas.Length; i++) {
+            for (int i = 0; i < this.mapEndIndex; i++) {
                 if (this.mapDatas[i] == null) {
                     this.mapDatas[i] = new MapDataEntity();
                 }
@@ -760,12 +775,38 @@ namespace DataRecorder.Models
                 }
             }
             this.mapDatasInitCount = this.mapDatas.Length;
+            this.mapIndex = 0;
+            this.mapEndIndex = 0;
         }
 
         /// <summary>
-        /// 
+        /// エネルギー変化格納用配列のリサイズ
         /// </summary>
-        public static bool NoteDataEquals(MapDataEntity a, NoteDataEntity b, bool noArrows = false)
+        private void EnergyDataResize(int size)
+        {
+            Array.Resize(ref this.energyDatas, size + addEnergyDataSize);
+        }
+
+        /// <summary>
+        /// ノーツ毎のスコア格納用配列のリサイズ
+        /// </summary>
+        private void NoteDataResize(int size)
+        {
+            Array.Resize(ref this.noteScores, size + addNoteScoreSize);
+        }
+
+        /// <summary>
+        /// 譜面データ用配列のリサイズ
+        /// </summary>
+        private void MapDataResize(int size)
+        {
+            Array.Resize(ref this.mapDatas, size + addMapDataSize);
+        }
+
+        /// <summary>
+        /// 譜面データとノーツデータを比較(noteID取得用)
+        /// </summary>
+        private static bool NoteDataEquals(MapDataEntity a, NoteDataEntity b, bool noArrows = false)
         {
             return a.time == b.noteTime && a.lineIndex == b.noteLine && a.noteLineLayer == b.noteLayer && a.colorType == b.colorType && (noArrows || a.cutDirection == b.noteCutDirection) && a.duration == b.duration;
         }

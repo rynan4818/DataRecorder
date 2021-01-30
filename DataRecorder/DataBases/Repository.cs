@@ -272,26 +272,26 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(new SQLiteParameter("@obstacles", 0));
                         else
                             command.Parameters.Add(new SQLiteParameter("@obstacles", gameStatus.modObstacles.ToString()));
-                        command.Parameters.Add(new SQLiteParameter("@instaFail", gameStatus.modInstaFail ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@noFail", gameStatus.modNoFail ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@batteryEnergy", gameStatus.modBatteryEnergy ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@disappearingArrows", gameStatus.modDisappearingArrows ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@noBombs", gameStatus.modNoBombs ? 1 : 0));
+                        command.Parameters.Add(new SQLiteParameter("@instaFail", gameStatus.modInstaFail));
+                        command.Parameters.Add(new SQLiteParameter("@noFail", gameStatus.modNoFail));
+                        command.Parameters.Add(new SQLiteParameter("@batteryEnergy", gameStatus.modBatteryEnergy));
+                        command.Parameters.Add(new SQLiteParameter("@disappearingArrows", gameStatus.modDisappearingArrows));
+                        command.Parameters.Add(new SQLiteParameter("@noBombs", gameStatus.modNoBombs));
                         command.Parameters.Add(new SQLiteParameter("@songSpeed", gameStatus.modSongSpeed.ToString()));
                         command.Parameters.Add(new SQLiteParameter("@songSpeedMultiplier", gameStatus.songSpeedMultiplier));
-                        command.Parameters.Add(new SQLiteParameter("@noArrows", gameStatus.modNoArrows ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@ghostNotes", gameStatus.modGhostNotes ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@failOnSaberClash", gameStatus.modFailOnSaberClash ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@strictAngles", gameStatus.modStrictAngles ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@fastNotes", gameStatus.modFastNotes ? 1 : 0));
+                        command.Parameters.Add(new SQLiteParameter("@noArrows", gameStatus.modNoArrows));
+                        command.Parameters.Add(new SQLiteParameter("@ghostNotes", gameStatus.modGhostNotes));
+                        command.Parameters.Add(new SQLiteParameter("@failOnSaberClash", gameStatus.modFailOnSaberClash));
+                        command.Parameters.Add(new SQLiteParameter("@strictAngles", gameStatus.modStrictAngles));
+                        command.Parameters.Add(new SQLiteParameter("@fastNotes", gameStatus.modFastNotes));
                         //playerSettingsステータス
-                        command.Parameters.Add(new SQLiteParameter("@staticLights", gameStatus.staticLights ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@leftHanded", gameStatus.leftHanded ? 1 : 0));
+                        command.Parameters.Add(new SQLiteParameter("@staticLights", gameStatus.staticLights));
+                        command.Parameters.Add(new SQLiteParameter("@leftHanded", gameStatus.leftHanded));
                         command.Parameters.Add(new SQLiteParameter("@playerHeight", gameStatus.playerHeight));
-                        command.Parameters.Add(new SQLiteParameter("@reduceDebris", gameStatus.reduceDebris ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@noHUD", gameStatus.noHUD ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@advancedHUD", gameStatus.advancedHUD ? 1 : 0));
-                        command.Parameters.Add(new SQLiteParameter("@autoRestart", gameStatus.autoRestart ? 1 : 0));
+                        command.Parameters.Add(new SQLiteParameter("@reduceDebris", gameStatus.reduceDebris));
+                        command.Parameters.Add(new SQLiteParameter("@noHUD", gameStatus.noHUD));
+                        command.Parameters.Add(new SQLiteParameter("@advancedHUD", gameStatus.advancedHUD));
+                        command.Parameters.Add(new SQLiteParameter("@autoRestart", gameStatus.autoRestart));
                         var result = command.ExecuteNonQuery();
                         // データ更新できない場合
                         if (result != 1) 
@@ -406,9 +406,8 @@ namespace DataRecorder.DataBases
                                                 @timeToNextBasicNote
                                             )
                         ";
-                        int endIndex = gameStatus.noteIndex;
                         gameStatus.lastNoteId = 0;
-                        for (gameStatus.noteIndex = 0; gameStatus.noteIndex < endIndex; gameStatus.noteIndex++) {
+                        for (gameStatus.noteIndex = 0; gameStatus.noteIndex < gameStatus.noteEndIndex; gameStatus.noteIndex++) {
                             var noteScore = gameStatus.NoteDataGet();
                             command.Parameters.Add(new SQLiteParameter("@time", noteScore.time));
                             command.Parameters.Add(new SQLiteParameter("@cutTime", noteScore.cutTime));
@@ -434,12 +433,12 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(new SQLiteParameter("@noteCutDirection", noteScore.noteCutDirection.ToString()));
                             command.Parameters.Add(new SQLiteParameter("@noteLine", noteScore.noteLine));
                             command.Parameters.Add(new SQLiteParameter("@noteLayer", (int)noteScore.noteLayer));
-                            command.Parameters.Add(new SQLiteParameter("@speedOK", noteScore.speedOK == true ? 1 : 0));
-                            command.Parameters.Add(new SQLiteParameter("@directionOK", noteScore.directionOK == null ? null : (noteScore.directionOK == true ? 1 : (int?)0)));
-                            command.Parameters.Add(new SQLiteParameter("@saberTypeOK", noteScore.saberTypeOK == null ? null : (noteScore.saberTypeOK == true ? 1 : (int?)0)));
-                            command.Parameters.Add(new SQLiteParameter("@wasCutTooSoon", noteScore.wasCutTooSoon == true ? 1 : 0));
+                            command.Parameters.Add(new SQLiteParameter("@speedOK", noteScore.speedOK));
+                            command.Parameters.Add(new SQLiteParameter("@directionOK", noteScore.directionOK));
+                            command.Parameters.Add(new SQLiteParameter("@saberTypeOK", noteScore.saberTypeOK));
+                            command.Parameters.Add(new SQLiteParameter("@wasCutTooSoon", noteScore.wasCutTooSoon));
                             command.Parameters.Add(new SQLiteParameter("@initialScore", noteScore.initialScore));
-                            command.Parameters.Add(new SQLiteParameter("@beforeScore", noteScore.finalScore - noteScore.cutDistanceScore));
+                            command.Parameters.Add(new SQLiteParameter("@beforeScore", noteScore.initialScore - noteScore.cutDistanceScore));
                             command.Parameters.Add(new SQLiteParameter("@afterScore", noteScore.finalScore - noteScore.initialScore));
                             command.Parameters.Add(new SQLiteParameter("@cutDistanceScore", noteScore.cutDistanceScore));
                             command.Parameters.Add(new SQLiteParameter("@finalScore", noteScore.finalScore));
@@ -470,8 +469,7 @@ namespace DataRecorder.DataBases
                                 break;
                             }
                         }
-                        endIndex = gameStatus.energyIndex;
-                        for (gameStatus.energyIndex = 0; gameStatus.energyIndex < endIndex; gameStatus.energyIndex++) {
+                        for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
                             var energyData = gameStatus.EnergyDataGet();
                             command.CommandText = "INSERT INTO EnergyChange(time, energy) VALUES (@time, @energy)";
                             command.Parameters.Add(new SQLiteParameter("@time", energyData.time));

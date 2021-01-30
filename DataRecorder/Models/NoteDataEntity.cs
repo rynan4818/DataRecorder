@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 namespace DataRecorder.Models
 {
     /// <summary>
-    /// ノーツカット格納情報
+    /// ノーツカット情報
     /// </summary>
     public class NoteDataEntity
     {
         /// <summary>
         /// [Game] イベント名
         /// </summary>
-        public BeatSaberEvent? bs_event { get; set; } = BeatSaberEvent.Menu;
+        public BeatSaberEvent bs_event { get; set; } = BeatSaberEvent.Menu;
 
         /// <summary>
         /// [Game] イベント発生時間(UNIX time[ms])
@@ -103,9 +103,9 @@ namespace DataRecorder.Models
         public float multiplierProgress { get; set; } = 0;
 
         /// <summary>
-        /// [Performance] 現在のバッテリー寿命の残り。バッテリーエネルギーとインスタ障害が無効になっている場合はnull。
+        /// [Performance] 現在のバッテリー寿命の残り。
         /// </summary>
-        public int? batteryEnergy { get; set; } = 1;
+        public int batteryEnergy { get; set; } = 1;
 
         /// <summary>
         /// [NoteCut] ノーツタイプ(noteID判定用)
@@ -130,62 +130,62 @@ namespace DataRecorder.Models
         /// <summary>
         /// [NoteCut] カット速度は十分に速かった
         /// </summary>
-        public bool? speedOK { get; set; } = null;
+        public bool speedOK { get; set; } = false;
 
         /// <summary>
-        /// [NoteCut] 正しい方向でノーツがカットされた。爆弾の場合はnull。
+        /// [NoteCut] 正しい方向でノーツがカットされた。
         /// </summary>
-        public bool? directionOK { get; set; } = null;
+        public bool directionOK { get; set; } = false;
 
         /// <summary>
-        /// [NoteCut] 正しいセイバーでノーツがカットされた。爆弾の場合はnull。
+        /// [NoteCut] 正しいセイバーでノーツがカットされた。
         /// </summary>
-        public bool? saberTypeOK { get; set; } = null;
+        public bool saberTypeOK { get; set; } = false;
 
         /// <summary>
         /// [NoteCut] ノーツのカットが早すぎる
         /// </summary>
-        public bool? wasCutTooSoon { get; set; } = null;
+        public bool wasCutTooSoon { get; set; } = false;
 
         /// <summary>
-        /// [NoteCut] カット前のスイングのスコアとノーツ中心カットの合計[max85]。爆弾の場合はnull。
+        /// [NoteCut] カット前のスイングのスコアとノーツ中心カットの合計[max85]。
         /// </summary>
-        public int? initialScore { get; set; } = null;
+        public int initialScore { get; set; } = -1;
 
         /// <summary>
-        /// [NoteCut] ノーツ中心カットのスコア[max15]。  爆弾の場合はnull。
+        /// [NoteCut] ノーツ中心カットのスコア[max15]。
         /// </summary>
-        public int? cutDistanceScore { get; set; } = null;
+        public int cutDistanceScore { get; set; } = -1;
 
         /// <summary>
-        /// [NoteCut] カット全体の乗数なしのスコア。爆弾の場合はnull。
+        /// [NoteCut] カット全体の乗数なしのスコア。
         /// </summary>
-        public int? finalScore { get; set; } = null;
+        public int finalScore { get; set; } = -1;
 
         /// <summary>
         /// [NoteCut] カット時のコンボ乗数
         /// </summary>
-        public int? cutMultiplier { get; set; } = null;
+        public int cutMultiplier { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツがカットされたときのセイバーの速度
         /// </summary>
-        public float? saberSpeed { get; set; } = null;
+        public float saberSpeed { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツがカットされたときにセイバーが移動した方向[X]
         /// </summary>
-        public float? saberDirX { get; set; } = null;
+        public float saberDirX { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツがカットされたときにセイバーが移動した方向[Y]
         /// </summary>
-        public float? saberDirY { get; set; } = null;
+        public float saberDirY { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツがカットされたときにセイバーが移動した方向[Z]
         /// </summary>
-        public float? saberDirZ { get; set; } = null;
+        public float saberDirZ { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツをカットするために使用されるセイバー "SaberA" | "SaberB"
@@ -195,62 +195,62 @@ namespace DataRecorder.Models
         /// <summary>
         /// [NoteCut] ゲームのスイング評価。カット前の評価。爆弾の場合は-1。
         /// </summary>
-        public float? swingRating { get; set; } = null;
+        public float swingRating { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ゲームのスイング評価。カット後の評価を使用します。爆弾の場合は-1。
         /// </summary>
-        public float? swingRatingFullyCut { get; set; } = null;
+        public float swingRatingFullyCut { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツをカットするのに最適な時間からの秒単位の時間オフセット
         /// </summary>
-        public float? timeDeviation { get; set; } = null;
+        public float timeDeviation { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] 度単位の完全なカット角度からのオフセット
         /// </summary>
-        public float? cutDirectionDeviation { get; set; } = null;
+        public float cutDirectionDeviation { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツの中心に最も近いカット平面上のポイントの位置[X]
         /// </summary>
-        public float? cutPointX { get; set; } = null;
+        public float cutPointX { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツの中心に最も近いカット平面上のポイントの位置[Y]
         /// </summary>
-        public float? cutPointY { get; set; } = null;
+        public float cutPointY { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツの中心に最も近いカット平面上のポイントの位置[Z]
         /// </summary>
-        public float? cutPointZ { get; set; } = null;
+        public float cutPointZ { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] カットする理想的な平面の法線[X]
         /// </summary>
-        public float? cutNormalX { get; set; } = null;
+        public float cutNormalX { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] カットする理想的な平面の法線[Y]
         /// </summary>
-        public float? cutNormalY { get; set; } = null;
+        public float cutNormalY { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] カットする理想的な平面の法線[Z]
         /// </summary>
-        public float? cutNormalZ { get; set; } = null;
+        public float cutNormalZ { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] ノーツの中心からカット平面までの距離
         /// </summary>
-        public float? cutDistanceToCenter { get; set; } = null;
+        public float cutDistanceToCenter { get; set; } = 0;
 
         /// <summary>
         /// [NoteCut] 次のノーツまでの時間（秒）
         /// </summary>
-        public float? timeToNextBasicNote { get; set; } = null;
+        public float timeToNextBasicNote { get; set; } = 0;
     }
     /// <summary>
     /// エネルギー変化保持内容

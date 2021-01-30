@@ -348,8 +348,6 @@ namespace DataRecorder.Models
             this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
             this.gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
-
-            Logger.Debug(Utility.GetCurrentTime().ToString());
         }
 
         /// <summary>
@@ -446,6 +444,7 @@ namespace DataRecorder.Models
             this._gameStatus.startTime = Utility.GetCurrentTime();
             this._gameStatus.cleared = BeatSaberEvent.Menu;
             this._gameStatus.NoteDataSizeCheck();
+            this._gameStatus.EnergyDataSizeCheck();
             this._gameStatus.MapDataSizeCheck();
             Logger.Debug(Utility.GetCurrentTime().ToString());
         }
