@@ -441,6 +441,7 @@ namespace DataRecorder.Models
             this.noteScoresInitCount = defaultNoteScoreSize;
             for (int i = 0; i < defaultEnergyDataSize; ++i)
                 this.energyDatas[i] = new EnergyDataEntity();
+            this.energyDataInitCount = defaultEnergyDataSize;
             for (int i = 0; i < defaultMapDataSize; ++i)
                 this.mapDatas[i] = new MapDataEntity();
             this.mapDatasInitCount = defaultMapDataSize;
@@ -464,8 +465,10 @@ namespace DataRecorder.Models
         /// </summary>
         public EnergyDataEntity EnergyDataGet()
         {
-            if (this.energyDatas[this.energyIndex] == null)
+            if (this.energyDatas[this.energyIndex] == null) {
                 this.energyDatas[this.energyIndex] = new EnergyDataEntity();
+                this.energyDataInitCount = this.energyIndex + 1;
+            }
             return this.energyDatas[this.energyIndex];
         }
 
@@ -474,8 +477,10 @@ namespace DataRecorder.Models
         /// </summary>
         public MapDataEntity MapDataGet()
         {
-            if (this.mapDatas[this.mapIndex] == null)
+            if (this.mapDatas[this.mapIndex] == null) {
                 this.mapDatas[this.mapIndex] = new MapDataEntity();
+                this.mapDatasInitCount = this.mapIndex + 1;
+            }
             return this.mapDatas[this.mapIndex];
         }
 
@@ -754,6 +759,7 @@ namespace DataRecorder.Models
             }
             this.energyIndex = 0;
             this.energyEndIndex = 0;
+            this.energyDataInitCount = this.energyDatas.Length;
         }
 
         /// <summary>
@@ -774,9 +780,9 @@ namespace DataRecorder.Models
                     this.mapDatas[i].duration = 0;
                 }
             }
-            this.mapDatasInitCount = this.mapDatas.Length;
             this.mapIndex = 0;
             this.mapEndIndex = 0;
+            this.mapDatasInitCount = this.mapDatas.Length;
         }
 
         /// <summary>
