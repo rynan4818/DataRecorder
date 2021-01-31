@@ -45,7 +45,7 @@ namespace DataRecorder
             Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
             Log.Debug("Config loaded");
             zenjector.OnApp<DataRecorderAppInstaller>();
-            zenjector.OnGame<DataRecorderGameInstaller>();
+            zenjector.OnGame<DataRecorderGameInstaller>(false);
         }
         
         #endregion
