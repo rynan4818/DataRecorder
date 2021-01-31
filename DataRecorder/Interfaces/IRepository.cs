@@ -19,5 +19,10 @@ namespace DataRecorder.Interfaces
         /// pause , resume イベント書き込みフラグ
         /// </summary>
         BeatSaberEvent? pauseEventAddFlag { get; set; }
+
+        /// <summary>
+        /// データベースのタイムアウト処理
+        /// </summary>
+        void DbTimeoutCheck();
     }
 }

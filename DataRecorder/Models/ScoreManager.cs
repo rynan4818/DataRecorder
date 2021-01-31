@@ -30,9 +30,6 @@ namespace DataRecorder.Models
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // パブリックメソッド
-        #endregion
-        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
-        #region // プライベートメソッド
 
         //public void OnMultiplayerStateChanged(MultiplayerController.State state)
         //{
@@ -59,7 +56,10 @@ namespace DataRecorder.Models
             this._gameStatus.paused = Utility.GetCurrentTime();
             this._gameStatus.endTime = this._gameStatus.paused;
             this._gameStatus.pauseCount++;
-            while (this._repository.pauseEventAddFlag != null) Thread.Sleep(1);
+            while (this._repository.pauseEventAddFlag != null) {
+                Thread.Sleep(1);
+                this._repository.DbTimeoutCheck();
+            }
             this._repository.pauseEventAddFlag = BeatSaberEvent.Pause;
         }
 
@@ -67,7 +67,10 @@ namespace DataRecorder.Models
         {
             this._gameStatus.start = Utility.GetCurrentTime() - (long)(audioTimeSyncController.songTime * 1000f / this._gameStatus.songSpeedMultiplier);
             this._gameStatus.paused = 0;
-            while (this._repository.pauseEventAddFlag != null) Thread.Sleep(1);
+            while (this._repository.pauseEventAddFlag != null) {
+                Thread.Sleep(1);
+                this._repository.DbTimeoutCheck();
+            }
             this._repository.pauseEventAddFlag = BeatSaberEvent.Resume;
         }
 
@@ -155,46 +158,6 @@ namespace DataRecorder.Models
             acsb.didFinishEvent -= OnNoteWasFullyCut;
         }
 
-        private void SetNoteCutStatus(NoteData noteData, NoteCutInfo noteCutInfo = null, bool initialCut = true)
-        {
-            var gameStatus = this._gameStatus;
-            var notescore = gameStatus.NoteDataGet();
-
-            // Backwards compatibility for <1.12.1
-            notescore.noteTime = noteData.time;
-            notescore.duration = noteData.duration;
-            notescore.colorType = noteData.colorType;
-            notescore.noteCutDirection = noteData.cutDirection;
-            notescore.noteLine = noteData.lineIndex;
-            notescore.noteLayer = noteData.noteLineLayer;
-            // If long notes are ever introduced, this name will make no sense
-            notescore.timeToNextBasicNote = noteData.timeToNextColorNote;
-            notescore.time = Utility.GetCurrentTime();
-
-            if (noteCutInfo != null) {
-                notescore.speedOK = noteCutInfo.speedOK;
-                notescore.directionOK = noteCutInfo.directionOK;
-                notescore.saberTypeOK = noteCutInfo.saberTypeOK;
-                notescore.wasCutTooSoon = noteCutInfo.wasCutTooSoon;
-                notescore.saberSpeed = noteCutInfo.saberSpeed;
-                notescore.saberDirX = noteCutInfo.saberDir[0];
-                notescore.saberDirY = noteCutInfo.saberDir[1];
-                notescore.saberDirZ = noteCutInfo.saberDir[2];
-                notescore.saberType = noteCutInfo.saberType;
-                notescore.swingRating = noteCutInfo.swingRatingCounter == null ? -1 : noteCutInfo.swingRatingCounter.beforeCutRating;
-                notescore.swingRatingFullyCut =  noteCutInfo.swingRatingCounter == null ? -1 : initialCut ? 0 : noteCutInfo.swingRatingCounter.afterCutRating;
-                notescore.timeDeviation = noteCutInfo.timeDeviation;
-                notescore.cutDirectionDeviation = noteCutInfo.cutDirDeviation;
-                notescore.cutPointX = noteCutInfo.cutPoint[0];
-                notescore.cutPointY = noteCutInfo.cutPoint[1];
-                notescore.cutPointZ = noteCutInfo.cutPoint[2];
-                notescore.cutNormalX = noteCutInfo.cutNormal[0];
-                notescore.cutNormalY = noteCutInfo.cutNormal[1];
-                notescore.cutNormalZ = noteCutInfo.cutNormal[2];
-                notescore.cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
-            }
-        }
-
         public void OnNoteWasMissed(NoteData noteData, int multiplier)
         {
             // Event order: combo, multiplier, scoreController.noteWasMissed, (LateUpdate) scoreController.scoreDidChange
@@ -269,6 +232,48 @@ namespace DataRecorder.Models
 
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+        #region // プライベートメソッド
+        private void SetNoteCutStatus(NoteData noteData, NoteCutInfo noteCutInfo = null, bool initialCut = true)
+        {
+            var gameStatus = this._gameStatus;
+            var notescore = gameStatus.NoteDataGet();
+
+            // Backwards compatibility for <1.12.1
+            notescore.noteTime = noteData.time;
+            notescore.duration = noteData.duration;
+            notescore.colorType = noteData.colorType;
+            notescore.noteCutDirection = noteData.cutDirection;
+            notescore.noteLine = noteData.lineIndex;
+            notescore.noteLayer = noteData.noteLineLayer;
+            // If long notes are ever introduced, this name will make no sense
+            notescore.timeToNextBasicNote = noteData.timeToNextColorNote;
+            notescore.time = Utility.GetCurrentTime();
+
+            if (noteCutInfo != null) {
+                notescore.speedOK = noteCutInfo.speedOK;
+                notescore.directionOK = noteCutInfo.directionOK;
+                notescore.saberTypeOK = noteCutInfo.saberTypeOK;
+                notescore.wasCutTooSoon = noteCutInfo.wasCutTooSoon;
+                notescore.saberSpeed = noteCutInfo.saberSpeed;
+                notescore.saberDirX = noteCutInfo.saberDir[0];
+                notescore.saberDirY = noteCutInfo.saberDir[1];
+                notescore.saberDirZ = noteCutInfo.saberDir[2];
+                notescore.saberType = noteCutInfo.saberType;
+                notescore.swingRating = noteCutInfo.swingRatingCounter == null ? -1 : noteCutInfo.swingRatingCounter.beforeCutRating;
+                notescore.swingRatingFullyCut = noteCutInfo.swingRatingCounter == null ? -1 : initialCut ? 0 : noteCutInfo.swingRatingCounter.afterCutRating;
+                notescore.timeDeviation = noteCutInfo.timeDeviation;
+                notescore.cutDirectionDeviation = noteCutInfo.cutDirDeviation;
+                notescore.cutPointX = noteCutInfo.cutPoint[0];
+                notescore.cutPointY = noteCutInfo.cutPoint[1];
+                notescore.cutPointZ = noteCutInfo.cutPoint[2];
+                notescore.cutNormalX = noteCutInfo.cutNormal[0];
+                notescore.cutNormalY = noteCutInfo.cutNormal[1];
+                notescore.cutNormalZ = noteCutInfo.cutNormal[2];
+                notescore.cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
+            }
+        }
+        #endregion
+        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // メンバ変数
         private bool disposedValue;
 
@@ -315,6 +320,13 @@ namespace DataRecorder.Models
         {
             Logger.Debug("Initialize call");
             Logger.Debug(Utility.GetCurrentTime().ToString());
+            //初期化処理
+            while (this._repository.playDataAddFlag) {
+                Thread.Sleep(1);
+                this._repository.DbTimeoutCheck();
+            }
+            this._gameStatus.ResetGameStatus();
+
             try {
                 this.scoreController = container.Resolve<ScoreController>();
                 this.gameplayModifiers = container.Resolve<GameplayModifiers>();
@@ -362,8 +374,6 @@ namespace DataRecorder.Models
             this.gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
 
             //BeatMapデータの登録
-            while (this._repository.playDataAddFlag) Thread.Sleep(1);
-            this._gameStatus.ResetGameStatus();
             this._gameStatus.scene = BeatSaberScene.Song;
 
             IDifficultyBeatmap diff = gameplayCoreSceneSetupData.difficultyBeatmap;

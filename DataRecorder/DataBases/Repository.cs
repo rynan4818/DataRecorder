@@ -34,6 +34,13 @@ namespace DataRecorder.DataBases
         public BeatSaberEvent? pauseEventAddFlag { get; set; } = null;
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+        #region // 定数
+        /// <summary>
+        /// データベース書き込みのタイムアウト時間[ms]
+        /// </summary>
+        private const int databaseTimeout = 5000;
+        #endregion
+        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // オーバーライドメソッド
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
@@ -52,6 +59,23 @@ namespace DataRecorder.DataBases
             this.CreateTable();
             this.thread = new Thread(new ThreadStart(this.DbInsertEvent));
             this.thread.Start();
+        }
+
+        /// <summary>
+        /// データベースのタイムアウト処理
+        /// </summary>
+        public void DbTimeoutCheck()
+        {
+            if (this.databaseInsertTime != null) {
+                if (Utility.GetCurrentTime() - this.databaseInsertTime > databaseTimeout) {
+                    Logger.Error("DB Timeout Error");
+                    this._connection?.Close();
+                    this._connection?.Dispose();
+                    this.databaseInsertTime = null;
+                    this.playDataAddFlag = false;
+                    this.pauseEventAddFlag = null;
+                }
+            }
         }
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
@@ -74,6 +98,7 @@ namespace DataRecorder.DataBases
         private void PauseEventAdd(BeatSaberEvent? bs_event)
         {
             Logger.Debug("PauseEventAdd call");
+            this.databaseInsertTime = Utility.GetCurrentTime();
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
                 try {
@@ -94,6 +119,7 @@ namespace DataRecorder.DataBases
                     this._connection.Close();
                 }
             }
+            this.databaseInsertTime = null;
             this.pauseEventAddFlag = null;
         }
 
@@ -104,6 +130,7 @@ namespace DataRecorder.DataBases
         {
             Logger.Debug("PlayDataAdd call");
             Logger.Debug(Utility.GetCurrentTime().ToString());
+            this.databaseInsertTime = Utility.GetCurrentTime();
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
                 SQLiteTransaction transaction = null;
@@ -438,6 +465,7 @@ namespace DataRecorder.DataBases
                         ";
                         gameStatus.lastNoteId = 0;
                         for (gameStatus.noteIndex = 0; gameStatus.noteIndex < gameStatus.noteEndIndex; gameStatus.noteIndex++) {
+                            this.databaseInsertTime = Utility.GetCurrentTime();
                             var noteScore = gameStatus.NoteDataGet();
                             command.Parameters.Add(new SQLiteParameter("@time", noteScore.time));
                             command.Parameters.Add(new SQLiteParameter("@cutTime", noteScore.cutTime));
@@ -500,6 +528,7 @@ namespace DataRecorder.DataBases
                             }
                         }
                         for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
+                            this.databaseInsertTime = Utility.GetCurrentTime();
                             var energyData = gameStatus.EnergyDataGet();
                             command.CommandText = "INSERT INTO EnergyChange(time, energy) VALUES (@time, @energy)";
                             command.Parameters.Add(new SQLiteParameter("@time", energyData.time));
@@ -531,6 +560,7 @@ namespace DataRecorder.DataBases
             }
             this._gameStatus.ResetGameStatus();
             this.playDataAddFlag = false;
+            this.databaseInsertTime = null;
             Logger.Debug(Utility.GetCurrentTime().ToString());
         }
 
@@ -714,6 +744,10 @@ namespace DataRecorder.DataBases
         #region // メンバ変数
         private SQLiteConnection _connection;
         private Thread thread;
+        /// <summary>
+        /// データベースの最終INSERT発行時間(通常時はnull)
+        /// </summary>
+        private long? databaseInsertTime = null;
 
         [Inject]
         private GameStatus _gameStatus;
