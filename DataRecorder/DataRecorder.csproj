@@ -119,7 +119,9 @@
     <Compile Include="Installers\DataRecorderGameInstaller.cs" />
     <Compile Include="Interfaces\IRepository.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="Models\EnergyDataEntity.cs" />
     <Compile Include="Models\GameStatus.cs" />
+    <Compile Include="Models\MapDataEntity.cs" />
     <Compile Include="Models\NoteDataEntity.cs" />
     <Compile Include="Models\ScoreManager.cs" />
     <Compile Include="Plugin.cs" />

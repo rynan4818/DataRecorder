@@ -50,6 +50,9 @@ namespace DataRecorder.Models
         //	// HandleMenuStart();
         //}
 
+        /// <summary>
+        /// Pauseイベント発生時
+        /// </summary>
         public void OnGamePause()
         {
             this._gameStatus.cleared = BeatSaberEvent.Pause;
@@ -63,6 +66,9 @@ namespace DataRecorder.Models
             this._repository.pauseEventAddFlag = BeatSaberEvent.Pause;
         }
 
+        /// <summary>
+        /// PauseからContinueイベント発生時
+        /// </summary>
         public void OnGameResume()
         {
             this._gameStatus.start = Utility.GetCurrentTime() - (long)(audioTimeSyncController.songTime * 1000f / this._gameStatus.songSpeedMultiplier);
@@ -74,6 +80,12 @@ namespace DataRecorder.Models
             this._repository.pauseEventAddFlag = BeatSaberEvent.Resume;
         }
 
+        /// <summary>
+        /// ノーツ(ボム含)のカットイベント発生時
+        /// </summary>
+        /// <param name="noteData"></param>
+        /// <param name="noteCutInfo"></param>
+        /// <param name="multiplier"></param>
         public void OnNoteWasCut(NoteData noteData, NoteCutInfo noteCutInfo, int multiplier)
         {
             // Event order: combo, multiplier, scoreController.noteWasCut, (LateUpdate) scoreController.scoreDidChange, afterCut, (LateUpdate) scoreController.scoreDidChange
@@ -126,6 +138,10 @@ namespace DataRecorder.Models
             gameStatus.NoteDataIndexUp();
         }
 
+        /// <summary>
+        /// ノーツの正常カット時の点数計算完了イベント発生時
+        /// </summary>
+        /// <param name="acsb"></param>
         public void OnNoteWasFullyCut(CutScoreBuffer acsb)
         {
             int beforeCutScore;
@@ -158,6 +174,11 @@ namespace DataRecorder.Models
             acsb.didFinishEvent -= OnNoteWasFullyCut;
         }
 
+        /// <summary>
+        /// ノーツ(ボム含)のミス(素通り)イベント発生時
+        /// </summary>
+        /// <param name="noteData"></param>
+        /// <param name="multiplier"></param>
         public void OnNoteWasMissed(NoteData noteData, int multiplier)
         {
             // Event order: combo, multiplier, scoreController.noteWasMissed, (LateUpdate) scoreController.scoreDidChange
@@ -180,6 +201,11 @@ namespace DataRecorder.Models
             this._gameStatus.NoteDataIndexUp();
         }
 
+        /// <summary>
+        /// スコア変更イベント発生時
+        /// </summary>
+        /// <param name="scoreBeforeMultiplier"></param>
+        /// <param name="scoreAfterMultiplier"></param>
         public void OnScoreDidChange(int scoreBeforeMultiplier, int scoreAfterMultiplier)
         {
             var gameStatus = this._gameStatus;
@@ -192,6 +218,10 @@ namespace DataRecorder.Models
             gameStatus.rank = RankModel.GetRankForScore(scoreBeforeMultiplier, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
         }
 
+        /// <summary>
+        /// コンボ数変更イベント発生時
+        /// </summary>
+        /// <param name="combo"></param>
         public void OnComboDidChange(int combo)
         {
             this._gameStatus.combo = combo;
@@ -199,6 +229,10 @@ namespace DataRecorder.Models
             this._gameStatus.maxCombo = scoreController.maxCombo;
         }
 
+        /// <summary>
+        /// エネルギー値変更イベント発生時
+        /// </summary>
+        /// <param name="energy"></param>
         public void OnEnergyDidChange(float energy)
         {
             this._gameStatus.batteryEnergy = gameEnergyCounter.batteryEnergy;
@@ -210,12 +244,20 @@ namespace DataRecorder.Models
             this._gameStatus.EnergyDataIndexUp();
         }
 
+        /// <summary>
+        /// コンボ乗数変更イベント発生時
+        /// </summary>
+        /// <param name="multiplier"></param>
+        /// <param name="multiplierProgress"></param>
         public void OnMultiplierDidChange(int multiplier, float multiplierProgress)
         {
             this._gameStatus.multiplier = multiplier;
             this._gameStatus.multiplierProgress = multiplierProgress;
         }
 
+        /// <summary>
+        /// 譜面のクリアイベント発生時
+        /// </summary>
         public void OnLevelFinished()
         {
             this._gameStatus.cleared = BeatSaberEvent.Finished;
@@ -223,6 +265,9 @@ namespace DataRecorder.Models
             this._gameStatus.endFlag = 1;
         }
 
+        /// <summary>
+        /// 譜面のフェイルイベント発生時
+        /// </summary>
         public void OnLevelFailed()
         {
             this._gameStatus.cleared = BeatSaberEvent.Failed;
@@ -233,6 +278,12 @@ namespace DataRecorder.Models
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // プライベートメソッド
+        /// <summary>
+        /// ノーツカットの情報取得
+        /// </summary>
+        /// <param name="noteData"></param>
+        /// <param name="noteCutInfo"></param>
+        /// <param name="initialCut"></param>
         private void SetNoteCutStatus(NoteData noteData, NoteCutInfo noteCutInfo = null, bool initialCut = true)
         {
             var gameStatus = this._gameStatus;

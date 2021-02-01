@@ -38,7 +38,7 @@ namespace DataRecorder.DataBases
         /// <summary>
         /// データベース書き込みのタイムアウト時間[ms]
         /// </summary>
-        private const int databaseTimeout = 5000;
+        private const int databaseTimeout = 10000;
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // オーバーライドメソッド
@@ -69,7 +69,6 @@ namespace DataRecorder.DataBases
             if (this.databaseInsertTime != null) {
                 if (Utility.GetCurrentTime() - this.databaseInsertTime > databaseTimeout) {
                     Logger.Error("DB Timeout Error");
-                    this._connection?.Close();
                     this._connection?.Dispose();
                     this.databaseInsertTime = null;
                     this.playDataAddFlag = false;
@@ -114,9 +113,6 @@ namespace DataRecorder.DataBases
                 }
                 catch (Exception e) {
                     Logger.Error(e);
-                }
-                finally {
-                    this._connection.Close();
                 }
             }
             this.databaseInsertTime = null;
@@ -554,9 +550,6 @@ namespace DataRecorder.DataBases
                     if (transaction != null)
                         transaction.Rollback();
                 }
-                finally {
-                    this._connection.Close();
-                }
             }
             this._gameStatus.ResetGameStatus();
             this.playDataAddFlag = false;
@@ -716,12 +709,16 @@ namespace DataRecorder.DataBases
                 catch (Exception e) {
                     Logger.Error(e);
                 }
-                finally {
-                    this._connection.Close();
-                }
             }
         }
 
+        /// <summary>
+        /// テーブルに指定カラムが存在するかチェックし、無ければ追加する
+        /// </summary>
+        /// <param name="command">SQLiteのコマンドオブジェクト</param>
+        /// <param name="table">対象テーブル名</param>
+        /// <param name="column">対象カラム名</param>
+        /// <param name="type">追加時の型</param>
         private void DbColumnCheck(SQLiteCommand command, string table, string column, string type)
         {
             command.CommandText = $"PRAGMA table_info('{table}');";
