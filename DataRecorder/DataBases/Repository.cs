@@ -128,8 +128,8 @@ namespace DataRecorder.DataBases
         /// </summary>
         private void PlayDataAdd()
         {
+            long addStartTime = Utility.GetCurrentTime();
             Logger.Debug("PlayDataAdd call");
-            Logger.Debug(Utility.GetCurrentTime().ToString());
             this.databaseInsertTime = Utility.GetCurrentTime();
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
@@ -561,7 +561,7 @@ namespace DataRecorder.DataBases
             this._gameStatus.ResetGameStatus();
             this.playDataAddFlag = false;
             this.databaseInsertTime = null;
-            Logger.Debug(Utility.GetCurrentTime().ToString());
+            Logger.Info($"Play data writing completed:{Utility.GetCurrentTime() - addStartTime}ms");
         }
 
         /// <summary>

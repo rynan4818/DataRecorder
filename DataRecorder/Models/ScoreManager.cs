@@ -276,6 +276,7 @@ namespace DataRecorder.Models
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // メンバ変数
         private bool disposedValue;
+        private bool initializeError;
 
         private GameplayCoreSceneSetupData gameplayCoreSceneSetupData;
         private PauseController pauseController;
@@ -296,8 +297,6 @@ namespace DataRecorder.Models
         private FieldInfo cutScoreBufferMultiplierField = typeof(CutScoreBuffer).GetField("_multiplier", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
         [Inject]
-        DiContainer container;
-        [Inject]
         private IRepository _repository;
         [Inject]
         private GameStatus _gameStatus;
@@ -308,25 +307,11 @@ namespace DataRecorder.Models
         /// Zenjetにより最初に呼ばれる関数です。
         /// </summary>
         /// <param name="container"></param>
-        //[Inject]
-        //private void Constractor(DiContainer container)
-        //{
-        //}
-
-        /// <summary>
-        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
-        /// </summary>
-        public void Initialize()
+        [Inject]
+        private void Constractor(DiContainer container)
         {
-            Logger.Debug("Initialize call");
-            Logger.Debug(Utility.GetCurrentTime().ToString());
-            //初期化処理
-            while (this._repository.playDataAddFlag) {
-                Thread.Sleep(1);
-                this._repository.DbTimeoutCheck();
-            }
-            this._gameStatus.ResetGameStatus();
-
+            Logger.Debug("Constractor call");
+            initializeError = true;
             try {
                 this.scoreController = container.Resolve<ScoreController>();
                 this.gameplayModifiers = container.Resolve<GameplayModifiers>();
@@ -340,7 +325,15 @@ namespace DataRecorder.Models
                 return;
             }
             this.pauseController = container.TryResolve<PauseController>();
+            initializeError = false;
+        }
 
+        /// <summary>
+        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
+        /// </summary>
+        public void Initialize()
+        {
+            if (initializeError) return;
             //各種イベントの追加
             // FIXME: 曲が終わったときには、このすべての参照先をきれいにしておく必要があります。(FIXME: i should probably clean references to all this when song is over)
             this.gameplayCoreSceneSetupData = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData;
@@ -372,6 +365,13 @@ namespace DataRecorder.Models
             this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
             this.gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
+
+            //初期化処理
+            while (this._repository.playDataAddFlag) {
+                Thread.Sleep(1);
+                this._repository.DbTimeoutCheck();
+            }
+            this._gameStatus.ResetGameStatus();
 
             //BeatMapデータの登録
             this._gameStatus.scene = BeatSaberScene.Song;
@@ -460,7 +460,7 @@ namespace DataRecorder.Models
             this._gameStatus.NoteDataSizeCheck();
             this._gameStatus.EnergyDataSizeCheck();
             this._gameStatus.MapDataSizeCheck();
-            Logger.Debug(Utility.GetCurrentTime().ToString());
+            Logger.Debug("Initialize end");
         }
 
         /// <summary>
@@ -476,7 +476,6 @@ namespace DataRecorder.Models
 
                     //各種イベントの削除
                     Logger.Debug("dispose call");
-                    Logger.Debug(Utility.GetCurrentTime().ToString());
                     try {
                         this._repository.playDataAddFlag = true;
 
