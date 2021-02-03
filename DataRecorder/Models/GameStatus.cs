@@ -9,6 +9,8 @@ namespace DataRecorder.Models
     public class GameStatus
     {
         #region // プロパティ
+        // クラス管理用
+
         /// <summary>
         /// ノーツ毎のスコア格納用配列の現在のインデックス
         /// </summary>
@@ -40,29 +42,41 @@ namespace DataRecorder.Models
         public int mapEndIndex { get; set; } = 0;
 
         /// <summary>
-        /// 譜面開始時刻 (UNIX time[ms])
+        /// noteID検索用
+        /// </summary>
+        public int lastNoteId { get; set; } = 0;
+
+        // 記録用
+
+        /// <summary>
+        /// 譜面開始時刻[独自] (UNIX time[ms])
         /// </summary>
         public long startTime { get; set; } = 0;
 
         /// <summary>
-        /// 譜面終了時刻 (UNIX time[ms])
+        /// 譜面終了時刻[独自] (UNIX time[ms])
         /// </summary>
         public long endTime { get; set; } = 0;
 
         /// <summary>
-        /// クリア条件
+        /// クリア条件[独自]
         /// </summary>
         public BeatSaberEvent? cleared { get; set; } = null;
 
         /// <summary>
-        /// 終了条件
+        /// 終了条件[独自]
         /// </summary>
         public int endFlag { get; set; } = 0;
 
         /// <summary>
-        /// pause回数
+        /// pause回数[独自]
         /// </summary>
         public int pauseCount { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Game] mode : マルチプレーヤー
+        /// </summary>
+        public bool multiplayer { get; set; } = false;
 
         /// <summary>
         /// StatusObject[Game] mode : パーティモード
@@ -75,7 +89,7 @@ namespace DataRecorder.Models
         public string mode { get; set; } = null;
 
         /// <summary>
-        /// StatusObject[Game] mode : ゲームシーン
+        /// StatusObject[Game] scene : ゲームシーン
         /// </summary>
         public BeatSaberScene? scene { get; set; } = null;
 
@@ -175,6 +189,11 @@ namespace DataRecorder.Models
         public string environmentName { get; set; } = null;
 
         /// <summary>
+        /// StatusObject[Performance] mod乗数無しの現在のスコア
+        /// </summary>
+        public int rawScore { get; set; } = 0;
+
+        /// <summary>
         /// StatusObject[Performance] 現在のスコア
         /// </summary>
         public int score { get; set; } = 0;
@@ -248,6 +267,11 @@ namespace DataRecorder.Models
         /// StatusObject[Performance] 現在のエネルギー残量
         /// </summary>
         public float energy { get; set; } = 0;
+
+        /// <summary>
+        /// StatusObject[Performance] noFail時のFail判定状態
+        /// </summary>
+        public bool softFailed { get; set; } = false;
 
         /// <summary>
         /// StatusObject[Mods] Mod乗数
@@ -363,11 +387,6 @@ namespace DataRecorder.Models
         /// StatusObject[Player settings] 失敗時に自動リスタート
         /// </summary>
         public bool autoRestart { get; set; } = false;
-
-        /// <summary>
-        /// noteID検索用
-        /// </summary>
-        public int lastNoteId { get; set; } = 0;
         #endregion
         #region // 定数
         /// <summary>
@@ -490,6 +509,7 @@ namespace DataRecorder.Models
         public void NoteDataIndexUp()
         {
             var performance = this.NoteDataGet();
+            performance.rawScore = this.rawScore;
             performance.score = this.score;
             performance.currentMaxScore = this.currentMaxScore;
             performance.rank = this.rank;
@@ -504,6 +524,7 @@ namespace DataRecorder.Models
             performance.multiplier = this.multiplier;
             performance.multiplierProgress = this.multiplierProgress;
             performance.batteryEnergy = this.batteryEnergy;
+            performance.softFailed = this.softFailed;
             this.noteIndex++;
             if (this.noteIndex >= this.noteScores.Length)
                 this.NoteDataResize(this.noteScores.Length);
@@ -586,6 +607,7 @@ namespace DataRecorder.Models
             this.cleared = null;
             this.endFlag = 0;
             this.pauseCount = 0;
+            this.multiplayer = false;
             this.partyMode = false;
             this.mode = null;
             this.scene = null;
@@ -608,6 +630,7 @@ namespace DataRecorder.Models
             this.maxScore = 0;
             this.maxRank = RankModel.Rank.E;
             this.environmentName = null;
+            this.rawScore = 0;
             this.score = 0;
             this.currentMaxScore = 0;
             this.rank = RankModel.Rank.E;
@@ -623,6 +646,7 @@ namespace DataRecorder.Models
             this.multiplierProgress = 0;
             this.batteryEnergy = 1;
             this.energy = 0;
+            this.softFailed = false;
             this.modifierMultiplier = 1f;
             this.modObstacles = GameplayModifiers.EnabledObstacleType.All;
             this.modInstaFail = false;
@@ -693,6 +717,7 @@ namespace DataRecorder.Models
                     this.noteScores[i].noteTime = 0;
                     this.noteScores[i].duration = 0;
                     this.noteScores[i].cutTime = null;
+                    this.noteScores[i].rawScore = 0;
                     this.noteScores[i].score = 0;
                     this.noteScores[i].currentMaxScore = 0;
                     this.noteScores[i].rank = RankModel.Rank.E;
@@ -707,6 +732,7 @@ namespace DataRecorder.Models
                     this.noteScores[i].multiplier = 0;
                     this.noteScores[i].multiplierProgress = 0;
                     this.noteScores[i].batteryEnergy = 1;
+                    this.noteScores[i].softFailed = false;
                     this.noteScores[i].colorType = ColorType.ColorA;
                     this.noteScores[i].noteCutDirection = null;
                     this.noteScores[i].noteLine = null;

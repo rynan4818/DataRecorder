@@ -208,14 +208,9 @@ namespace DataRecorder.Models
         /// <param name="scoreAfterMultiplier"></param>
         public void OnScoreDidChange(int scoreBeforeMultiplier, int scoreAfterMultiplier)
         {
-            var gameStatus = this._gameStatus;
-
-            gameStatus.score = scoreAfterMultiplier;
-
-            int currentMaxScoreBeforeMultiplier = ScoreModel.MaxRawScoreForNumberOfNotes(gameStatus.passedNotes);
-            gameStatus.currentMaxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
-
-            gameStatus.rank = RankModel.GetRankForScore(scoreBeforeMultiplier, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
+            this._gameStatus.rawScore = scoreBeforeMultiplier;
+            this._gameStatus.score = scoreAfterMultiplier;
+            this.UpdateCurrentMaxScore();
         }
 
         /// <summary>
@@ -230,18 +225,36 @@ namespace DataRecorder.Models
         }
 
         /// <summary>
+        /// マルチプレイヤーモードでの終了時
+        /// </summary>
+        /// <param name="obj"></param>
+        private void OnMultiplayerLevelFinished(LevelCompletionResults obj)
+        {
+            switch (obj.levelEndStateType) {
+                case LevelCompletionResults.LevelEndStateType.Failed:
+                    OnLevelFailed();
+                    break;
+                default:
+                    OnLevelFinished();
+                    break;
+            }
+        }
+
+        /// <summary>
         /// エネルギー値変更イベント発生時
         /// </summary>
         /// <param name="energy"></param>
         public void OnEnergyDidChange(float energy)
         {
-            this._gameStatus.batteryEnergy = gameEnergyCounter.batteryEnergy;
-            this._gameStatus.energy = energy;
+            if (this._gameStatus.softFailed == false) {
+                this._gameStatus.batteryEnergy = gameEnergyCounter.batteryEnergy;
+                this._gameStatus.energy = energy;
 
-            var energyData = this._gameStatus.EnergyDataGet();
-            energyData.energy = energy;
-            energyData.time = Utility.GetCurrentTime();
-            this._gameStatus.EnergyDataIndexUp();
+                var energyData = this._gameStatus.EnergyDataGet();
+                energyData.energy = energy;
+                energyData.time = Utility.GetCurrentTime();
+                this._gameStatus.EnergyDataIndexUp();
+            }
         }
 
         /// <summary>
@@ -260,7 +273,8 @@ namespace DataRecorder.Models
         /// </summary>
         public void OnLevelFinished()
         {
-            this._gameStatus.cleared = BeatSaberEvent.Finished;
+            if(this._gameStatus.softFailed == false)
+                this._gameStatus.cleared = BeatSaberEvent.Finished;
             this._gameStatus.endTime = Utility.GetCurrentTime();
             this._gameStatus.endFlag = 1;
         }
@@ -273,6 +287,28 @@ namespace DataRecorder.Models
             this._gameStatus.cleared = BeatSaberEvent.Failed;
             this._gameStatus.endTime = Utility.GetCurrentTime();
             this._gameStatus.endFlag = 1;
+        }
+
+        /// <summary>
+        /// noFail時のフェイルイベント発生時
+        /// </summary>
+        public void OnEnergyDidReach0Event()
+        {
+            if (this._gameStatus.modNoFail) {
+                this._gameStatus.softFailed = true;
+                this._gameStatus.cleared = BeatSaberEvent.SoftFailed;
+                UpdateModMultiplier();
+                UpdateCurrentMaxScore();
+                long nowTime = Utility.GetCurrentTime();
+                var energyData = this._gameStatus.EnergyDataGet();
+                energyData.time = nowTime;
+                energyData.energy = 0;
+                this._gameStatus.EnergyDataIndexUp();
+                energyData = this._gameStatus.EnergyDataGet();
+                energyData.time = nowTime + 1;
+                energyData.energy = -1;
+                this._gameStatus.EnergyDataIndexUp();
+            }
         }
 
         #endregion
@@ -323,6 +359,27 @@ namespace DataRecorder.Models
                 notescore.cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
             }
         }
+        /// <summary>
+        /// コンボ乗数、最大スコア・ランクの更新
+        /// </summary>
+        private void UpdateModMultiplier()
+        {
+            this._gameStatus.modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers, gameEnergyCounter.energy);
+            this._gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(gameplayCoreSceneSetupData.difficultyBeatmap.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
+            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
+        }
+
+        /// <summary>
+        /// 現在の最大スコア・ランクの更新
+        /// </summary>
+        private void UpdateCurrentMaxScore()
+        {
+            GameStatus gameStatus = this._gameStatus;
+            int currentMaxScoreBeforeMultiplier = ScoreModel.MaxRawScoreForNumberOfNotes(gameStatus.passedNotes);
+            gameStatus.currentMaxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
+            gameStatus.rank = RankModel.GetRankForScore(gameStatus.rawScore, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
+        }
+
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // メンバ変数
@@ -336,6 +393,8 @@ namespace DataRecorder.Models
         private AudioTimeSyncController audioTimeSyncController;
         private GameSongController gameSongController;
         private GameEnergyCounter gameEnergyCounter;
+        private MultiplayerLocalActivePlayerFacade multiplayerLocalActivePlayerFacade;
+        private ILevelEndActions levelEndActions;
         private ConcurrentDictionary<NoteCutInfo, NoteData> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteData>();
         private ConcurrentDictionary<NoteCutInfo, long> noteCutTiming = new ConcurrentDictionary<NoteCutInfo, long>();
         private GameplayModifiersModelSO gameplayModifiersSO;
@@ -362,8 +421,9 @@ namespace DataRecorder.Models
         private void Constractor(DiContainer container)
         {
             Logger.Debug("Constractor call");
-            initializeError = true;
+            this.initializeError = true;
             try {
+                this.gameplayCoreSceneSetupData = container.Resolve<GameplayCoreSceneSetupData>();
                 this.scoreController = container.Resolve<ScoreController>();
                 this.gameplayModifiers = container.Resolve<GameplayModifiers>();
                 this.audioTimeSyncController = container.Resolve<AudioTimeSyncController>();
@@ -376,7 +436,9 @@ namespace DataRecorder.Models
                 return;
             }
             this.pauseController = container.TryResolve<PauseController>();
-            initializeError = false;
+            this.levelEndActions = container.TryResolve<ILevelEndActions>();
+            this.multiplayerLocalActivePlayerFacade = container.TryResolve<MultiplayerLocalActivePlayerFacade>();
+            this.initializeError = false;
         }
 
         /// <summary>
@@ -384,16 +446,24 @@ namespace DataRecorder.Models
         /// </summary>
         public void Initialize()
         {
-            if (initializeError) return;
+            if (this.initializeError) return;
+            //初期化処理
+            while (this._repository.playDataAddFlag) {
+                Thread.Sleep(1);
+                this._repository.DbTimeoutCheck();
+            }
+            this._gameStatus.ResetGameStatus();
+
             //各種イベントの追加
             // FIXME: 曲が終わったときには、このすべての参照先をきれいにしておく必要があります。(FIXME: i should probably clean references to all this when song is over)
-            this.gameplayCoreSceneSetupData = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData;
-
-            Logger.Info("scoreController=" + this.scoreController);
 
             // イベントリスナーの登録 (Register event listeners)
             // マルチプレイヤーでは PauseController が存在しない (PauseController doesn't exist in multiplayer)
-            if (this.pauseController != null) {
+            Logger.Info("scoreController=" + this.scoreController);
+            if (this.pauseController == null) {
+                this._gameStatus.multiplayer = true;
+            }
+            else {
                 Logger.Info("pauseController=" + this.pauseController);
                 // public event Action PauseController#didPauseEvent;
                 this.pauseController.didPauseEvent += this.OnGamePause;
@@ -413,17 +483,18 @@ namespace DataRecorder.Models
             // public event Action GameSongController#songDidFinishEvent;
             this.gameSongController.songDidFinishEvent += this.OnLevelFinished;
             // public event Action GameEnergyCounter#gameEnergyDidReach0Event;
-            this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnLevelFailed;
+            this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnEnergyDidReach0Event;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
             this.gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
 
-            //初期化処理
-            while (this._repository.playDataAddFlag) {
-                Thread.Sleep(1);
-                this._repository.DbTimeoutCheck();
+            if (this.multiplayerLocalActivePlayerFacade != null) {
+                this.multiplayerLocalActivePlayerFacade.playerDidFinishEvent += this.OnMultiplayerLevelFinished;
+                this._gameStatus.multiplayer = true;
             }
-            this._gameStatus.ResetGameStatus();
-
+            if (this.levelEndActions != null) {
+                this.levelEndActions.levelFailedEvent += this.OnLevelFinished;
+                this.levelEndActions.levelFailedEvent += this.OnLevelFailed;
+            }
             //BeatMapデータの登録
             this._gameStatus.scene = BeatSaberScene.Song;
 
@@ -442,7 +513,6 @@ namespace DataRecorder.Models
 
             // HTTPStatus 1.12.1以下との下位互換性のために、NoteDataからidへのマッピングを生成します。 [Generate NoteData to id mappings for backwards compatiblity with <1.12.1]
             var beatmapObjectsData = diff.beatmapData.beatmapObjectsData;
-
             foreach (BeatmapObjectData beatmapObjectData in beatmapObjectsData) {
                 if (beatmapObjectData is NoteData noteData) {
                     var mapdata = this._gameStatus.MapDataGet();
@@ -455,8 +525,6 @@ namespace DataRecorder.Models
                     this._gameStatus.MapDataIndexUp();
                 }
             }
-
-            float modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers, gameEnergyCounter.energy);
 
             this._gameStatus.songName = level.songName;
             this._gameStatus.songSubName = level.songSubName;
@@ -478,10 +546,8 @@ namespace DataRecorder.Models
             this._gameStatus.obstaclesCount = diff.beatmapData.obstaclesCount;
             this._gameStatus.environmentName = level.environmentInfo.sceneInfo.sceneName;
 
-            this._gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(diff.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
-            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
+            this.UpdateModMultiplier();
 
-            this._gameStatus.modifierMultiplier = modifierMultiplier;
             this._gameStatus.songSpeedMultiplier = songSpeedMul;
             this._gameStatus.batteryLives = gameEnergyCounter.batteryLives;
 
@@ -547,9 +613,20 @@ namespace DataRecorder.Models
                             this.scoreController.multiplierDidChangeEvent -= this.OnMultiplierDidChange;
                         }
 
+                        if (this.multiplayerLocalActivePlayerFacade != null) {
+                            this.multiplayerLocalActivePlayerFacade.playerDidFinishEvent -= this.OnMultiplayerLevelFinished;
+                            this.multiplayerLocalActivePlayerFacade = null;
+                        }
+
+                        if (this.levelEndActions != null) {
+                            this.levelEndActions.levelFailedEvent -= this.OnLevelFinished;
+                            this.levelEndActions.levelFailedEvent -= this.OnLevelFailed;
+                        }
+                        //CleanUpMultiplayer();
+
                         if (this.gameEnergyCounter != null) {
                             this.gameEnergyCounter.gameEnergyDidChangeEvent -= this.OnEnergyDidChange;
-                            this.gameEnergyCounter.gameEnergyDidReach0Event -= this.OnLevelFailed;
+                            this.gameEnergyCounter.gameEnergyDidReach0Event -= this.OnEnergyDidReach0Event;
                         }
 
                         if (this.gameSongController != null) {

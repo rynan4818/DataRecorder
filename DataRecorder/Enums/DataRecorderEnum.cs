@@ -43,7 +43,9 @@ namespace DataRecorder.Enums
 		[Description("beatmapEvent")]
 		BeatmapEvent,
 		[Description("energyChanged")]
-		EnergyChanged
+		EnergyChanged,
+		[Description("softFail")]
+		SoftFailed
 	}
 	/// <summary>
 	/// ゲームシーンの名称と値を管理

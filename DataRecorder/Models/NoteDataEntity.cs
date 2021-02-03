@@ -34,6 +34,11 @@ namespace DataRecorder.Models
         public long? cutTime { get; set; } = null;
 
         /// <summary>
+        /// [Performance] mod乗数無しの現在のスコア
+        /// </summary>
+        public int rawScore { get; set; } = 0;
+
+        /// <summary>
         /// [Performance] 現在のスコア
         /// </summary>
         public int score { get; set; } = 0;
@@ -102,6 +107,11 @@ namespace DataRecorder.Models
         /// [Performance] 現在のバッテリー寿命の残り。
         /// </summary>
         public int batteryEnergy { get; set; } = 1;
+
+        /// <summary>
+        /// [Performance] noFail時のFail判定状態
+        /// </summary>
+        public bool softFailed { get; set; } = false;
 
         /// <summary>
         /// [NoteCut] ノーツタイプ(noteID判定用)

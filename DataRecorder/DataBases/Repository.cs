@@ -53,6 +53,7 @@ namespace DataRecorder.DataBases
         private const string sGameVersion = "gameVersion";
         private const string sScene = "scene";
         private const string sMode = "mode";
+        // BeatMap
         private const string sSongName = "songName";
         private const string sSongSubName = "songSubName";
         private const string sSongAuthorName = "songAuthorName";
@@ -73,6 +74,8 @@ namespace DataRecorder.DataBases
         private const string sMaxRank = "maxRank";
         private const string sEnvironmentName = "environmentName";
         private const string sScorePercentage = "scorePercentage";
+        // Performance
+        private const string sRawScore = "rawScore";
         private const string sScore = "score";
         private const string sCurrentMaxScore = "currentMaxScore";
         private const string sRank = "rank";
@@ -84,6 +87,11 @@ namespace DataRecorder.DataBases
         private const string sHitBombs = "hitBombs";
         private const string sCombo = "combo";
         private const string sMaxCombo = "maxCombo";
+        private const string sComboMultiplier = "comboMultiplier";
+        private const string sMultiplierProgress = "multiplierProgress";
+        private const string sBatteryEnergyLevel = "batteryEnergyLevel";
+        private const string sSoftFailed = "softFailed";
+        // Mod
         private const string sMultiplier = "multiplier";
         private const string sObstacles = "obstacles";
         private const string sInstaFail = "instaFail";
@@ -105,9 +113,9 @@ namespace DataRecorder.DataBases
         private const string sNoHUD = "noHUD";
         private const string sAdvancedHUD = "advancedHUD";
         private const string sAutoRestart = "autoRestart";
+        // NoteCut
         private const string sCutTime = "cutTime";
         private const string sStartTime = "startTime";
-        private const string sMultiplierProgress = "multiplierProgress";
         private const string sNoteID = "noteID";
         private const string sNoteType = "noteType";
         private const string sNoteCutDirection = "noteCutDirection";
@@ -185,6 +193,7 @@ namespace DataRecorder.DataBases
                                 maxRank,
                                 environmentName,
                                 scorePercentage,
+                                rawScore,
                                 score,
                                 currentMaxScore,
                                 rank,
@@ -196,6 +205,11 @@ namespace DataRecorder.DataBases
                                 hitBombs,
                                 combo,
                                 maxCombo,
+                                comboMultiplier,
+                                multiplierProgress,
+                                batteryEnergyLevel,
+                                energy,
+                                softFailed,
                                 multiplier,
                                 obstacles,
                                 instaFail,
@@ -248,6 +262,7 @@ namespace DataRecorder.DataBases
                                 @maxRank,
                                 @environmentName,
                                 @scorePercentage,
+                                @rawScore,
                                 @score,
                                 @currentMaxScore,
                                 @rank,
@@ -259,6 +274,11 @@ namespace DataRecorder.DataBases
                                 @hitBombs,
                                 @combo,
                                 @maxCombo,
+                                @comboMultiplier,
+                                @multiplierProgress,
+                                @batteryEnergyLevel,
+                                @energy,
+                                @softFailed,
                                 @multiplier,
                                 @obstacles,
                                 @instaFail,
@@ -289,6 +309,7 @@ namespace DataRecorder.DataBases
                                                     cutTime,
                                                     startTime,
                                                     event,
+                                                    rawScore,
                                                     score,
                                                     currentMaxScore,
                                                     rank,
@@ -303,6 +324,7 @@ namespace DataRecorder.DataBases
                                                     multiplier,
                                                     multiplierProgress,
                                                     batteryEnergy,
+                                                    softFailed,
                                                     noteID,
                                                     noteType,
                                                     noteCutDirection,
@@ -340,6 +362,7 @@ namespace DataRecorder.DataBases
                                                     @cutTime,
                                                     @startTime,
                                                     @event,
+                                                    @rawScore,
                                                     @score,
                                                     @currentMaxScore,
                                                     @rank,
@@ -354,6 +377,7 @@ namespace DataRecorder.DataBases
                                                     @multiplier,
                                                     @multiplierProgress,
                                                     @batteryEnergy,
+                                                    @softFailed,
                                                     @noteID,
                                                     @noteType,
                                                     @noteCutDirection,
@@ -477,21 +501,23 @@ namespace DataRecorder.DataBases
         /// </summary>
         private void PlayDataAdd()
         {
+            int result;
+            var gameStatus = this._gameStatus;
             long addStartTime = Utility.GetCurrentTime();
             Logger.Debug("PlayDataAdd call");
             this.databaseInsertTime = Utility.GetCurrentTime();
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
                 this._connection.Open();
-                SQLiteTransaction transaction = null;
-                try {
-                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
-                        var gameStatus = this._gameStatus;
+                using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
+                    try {
                         command.CommandText = sqlPlayDataAddBeatMap;
                         #region // MovieCutRecordテーブルINSERT
                         //独自カラム
                         command.Parameters.Add(sStartTime, DbType.Int64);
                         command.Parameters[sStartTime].Value = gameStatus.startTime;
                         command.Parameters.Add(sEndTime, DbType.Int64);
+                        if (gameStatus.endTime == 0)
+                            gameStatus.endTime = Utility.GetCurrentTime();
                         command.Parameters[sEndTime].Value = gameStatus.endTime;
                         command.Parameters.Add(sMenuTime, DbType.Int64);
                         command.Parameters[sMenuTime].Value = Utility.GetCurrentTime();
@@ -509,7 +535,7 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(sScene, DbType.String);
                         command.Parameters[sScene].Value = gameStatus.scene.GetDescription();
                         command.Parameters.Add(sMode, DbType.String);
-                        command.Parameters[sMode].Value = gameStatus.mode == null ? null : (gameStatus.partyMode ? "Party" : "Solo") + gameStatus.mode;
+                        command.Parameters[sMode].Value = gameStatus.mode == null ? null : (gameStatus.multiplayer ? "Multiplayer" : gameStatus.partyMode ? "Party" : "Solo") + gameStatus.mode;
                         //beatmapステータス
                         command.Parameters.Add(sSongName, DbType.String);
                         command.Parameters[sSongName].Value = gameStatus.songName;
@@ -563,6 +589,8 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(sScorePercentage, DbType.Double);
                         command.Parameters[sScorePercentage].Value = scorePercentage;
                         //performanceステータス
+                        command.Parameters.Add(sRawScore, DbType.Int32);
+                        command.Parameters[sRawScore].Value = gameStatus.rawScore;
                         command.Parameters.Add(sScore, DbType.Int32);
                         command.Parameters[sScore].Value = gameStatus.score;
                         command.Parameters.Add(sCurrentMaxScore, DbType.Int32);
@@ -585,6 +613,16 @@ namespace DataRecorder.DataBases
                         command.Parameters[sCombo].Value = gameStatus.combo;
                         command.Parameters.Add(sMaxCombo, DbType.Int32);
                         command.Parameters[sMaxCombo].Value = gameStatus.maxCombo;
+                        command.Parameters.Add(sComboMultiplier, DbType.Int32);
+                        command.Parameters[sComboMultiplier].Value = gameStatus.multiplier;
+                        command.Parameters.Add(sMultiplierProgress, DbType.Single);
+                        command.Parameters[sMultiplierProgress].Value = gameStatus.multiplierProgress;
+                        command.Parameters.Add(sBatteryEnergyLevel, DbType.Int32);
+                        command.Parameters[sBatteryEnergyLevel].Value = gameStatus.batteryEnergy;
+                        command.Parameters.Add(sEnergy, DbType.Single);
+                        command.Parameters[sEnergy].Value = gameStatus.energy;
+                        command.Parameters.Add(sSoftFailed, DbType.Boolean);
+                        command.Parameters[sSoftFailed].Value = gameStatus.softFailed;
                         //modステータス
                         command.Parameters.Add(sMultiplier, DbType.Single);
                         command.Parameters[sMultiplier].Value = gameStatus.modifierMultiplier;
@@ -632,20 +670,25 @@ namespace DataRecorder.DataBases
                         command.Parameters[sAdvancedHUD].Value = gameStatus.advancedHUD;
                         command.Parameters.Add(sAutoRestart, DbType.Boolean);
                         command.Parameters[sAutoRestart].Value = gameStatus.autoRestart;
-                        var result = command.ExecuteNonQuery();
-                        // データ更新できない場合
-                        if (result != 1) 
-                            Logger.Error("DB NoteScore MovieCutRecord Error");
-                        #endregion
+                        result = command.ExecuteNonQuery();
+                        if (result != 1)
+                            Logger.Error("DB MovieCutRecord Error");
+                    }
+                    catch (Exception e) {
+                        Logger.Error("DB MovieCutRecord Error:" + e.Message);
+                    }
+                    #endregion
 
-                        #region // NoteScore
-                        // トランザクションを開始します。
-                        using (transaction = this._connection.BeginTransaction()) {
+                    #region // NoteScore
+                    // トランザクションを開始します。
+                    using (SQLiteTransaction transaction = this._connection.BeginTransaction()) {
+                        try {
                             command.CommandText = sqlPlayDataAddNoteCut;
                             command.Parameters.Add(sTime, DbType.Int64);
                             command.Parameters.Add(sCutTime, DbType.Int64);
                             command.Parameters.Add(sStartTime, DbType.Int64);
                             command.Parameters.Add(sEvent, DbType.String);
+                            command.Parameters.Add(sRawScore, DbType.Int32);
                             command.Parameters.Add(sScore, DbType.Int32);
                             command.Parameters.Add(sCurrentMaxScore, DbType.Int32);
                             command.Parameters.Add(sRank, DbType.String);
@@ -660,6 +703,7 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(sMultiplier, DbType.Int32);
                             command.Parameters.Add(sMultiplierProgress, DbType.Single);
                             command.Parameters.Add(sBatteryEnergy, DbType.Int32);
+                            command.Parameters.Add(sSoftFailed, DbType.Boolean);
                             command.Parameters.Add(sNoteID, DbType.Int32);
                             command.Parameters.Add(sNoteType, DbType.String);
                             command.Parameters.Add(sNoteCutDirection, DbType.String);
@@ -700,6 +744,7 @@ namespace DataRecorder.DataBases
                                 command.Parameters[sCutTime].Value = noteScore.cutTime;
                                 command.Parameters[sStartTime].Value = gameStatus.startTime;
                                 command.Parameters[sEvent].Value = noteScore.bs_event.GetDescription();
+                                command.Parameters[sRawScore].Value = noteScore.rawScore;
                                 command.Parameters[sScore].Value = noteScore.score;
                                 command.Parameters[sCurrentMaxScore].Value = noteScore.currentMaxScore;
                                 command.Parameters[sRank].Value = RankModel.GetRankName(noteScore.rank);
@@ -714,6 +759,7 @@ namespace DataRecorder.DataBases
                                 command.Parameters[sMultiplier].Value = noteScore.multiplier;
                                 command.Parameters[sMultiplierProgress].Value = noteScore.multiplierProgress;
                                 command.Parameters[sBatteryEnergy].Value = noteScore.batteryEnergy;
+                                command.Parameters[sSoftFailed].Value = noteScore.softFailed;
                                 command.Parameters[sNoteID].Value = gameStatus.GetNoteId();
                                 command.Parameters[sNoteType].Value = noteScore.colorType == ColorType.None ? sBomb : noteScore.colorType == ColorType.ColorA ? sNoteA : noteScore.colorType == ColorType.ColorB ? sNoteB : noteScore.colorType.ToString();
                                 command.Parameters[sNoteCutDirection].Value = noteScore.noteCutDirection.ToString();
@@ -747,40 +793,45 @@ namespace DataRecorder.DataBases
                                 command.Parameters[sCutDistanceToCenter].Value = noteScore.cutDistanceToCenter;
                                 command.Parameters[sTimeToNextBasicNote].Value = noteScore.timeToNextBasicNote;
                                 result = command.ExecuteNonQuery();
-                                // データ更新できない場合
                                 if (result != 1) {
                                     Logger.Error("DB NoteScore INSERT Error");
                                     transaction.Rollback();
-                                    transaction = null;
                                     break;
                                 }
                             }
+                        }
+                        catch (Exception e) {
+                            Logger.Error("DB NoteScore INSERT Error:" + e.Message);
+                            transaction.Rollback();
+                        }
+                        try {
                             command.CommandText = sqlPlayDataAddEnergy;
                             command.Parameters.Add(sTime, DbType.Int64);
                             command.Parameters.Add(sEnergy, DbType.Single);
+                            long beforeTime = 0;
                             for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
                                 this.databaseInsertTime = Utility.GetCurrentTime();
                                 var energyData = gameStatus.EnergyDataGet();
+                                if (beforeTime == energyData.time)
+                                    energyData.time += 1;
+                                beforeTime = energyData.time;
                                 command.Parameters[sTime].Value = energyData.time;
                                 command.Parameters[sEnergy].Value = energyData.energy;
                                 result = command.ExecuteNonQuery();
-                                // データ更新できない場合
                                 if (result != 1) {
                                     Logger.Error("DB EnergyChange INSERT Error");
                                     transaction.Rollback();
-                                    transaction = null;
                                     break;
                                 }
                             }
-                            transaction?.Commit();
+                            transaction.Commit();
+                        }
+                        catch (Exception e) {
+                            Logger.Error("DB EnergyChange INSERT Error:" + e.Message);
+                            transaction.Rollback();
                         }
                         #endregion
                     }
-                }
-                // 例外が発生した場合
-                catch (Exception e) {
-                    Logger.Error("DB NoteScore INSERT Error " + e.Message);
-                    transaction?.Rollback();
                 }
             }
             this._gameStatus.ResetGameStatus();
@@ -830,6 +881,7 @@ namespace DataRecorder.DataBases
                                 maxRank TEXT,
                                 environmentName TEXT,
                                 scorePercentage REAL,
+                                rawScore INTEGER,
                                 score INTEGER,
                                 currentMaxScore INTEGER,
                                 rank TEXT,
@@ -841,6 +893,11 @@ namespace DataRecorder.DataBases
                                 hitBombs INTEGER,
                                 combo INTEGER,
                                 maxCombo INTEGER,
+                                comboMultiplier INTEGER,
+                                multiplierProgress REAL,
+                                batteryEnergyLevel INTEGER,
+                                energy REAL,
+                                softFailed INTEGER,
                                 multiplier REAL,
                                 obstacles TEXT,
                                 instaFail INTEGER,
@@ -885,6 +942,7 @@ namespace DataRecorder.DataBases
                                 cutTime INTEGER,
                                 startTime INTEGER,
                                 event TEXT,
+                                rawScore INTEGER,
                                 score INTEGER,
                                 currentMaxScore INTEGER,
                                 rank TEXT,
@@ -899,6 +957,7 @@ namespace DataRecorder.DataBases
                                 multiplier INTEGER,
                                 multiplierProgress REAL,
                                 batteryEnergy INTEGER,
+                                softFailed INTEGER,
                                 noteID INTEGER,
                                 noteType TEXT,
                                 noteCutDirection TEXT,
@@ -935,7 +994,15 @@ namespace DataRecorder.DataBases
                         ";
                         command.ExecuteNonQuery();
                         DbColumnCheck(command, "MovieCutRecord", "levelId", "TEXT");
+                        DbColumnCheck(command, "MovieCutRecord", "rawScore", "INTEGER");
+                        DbColumnCheck(command, "MovieCutRecord", "comboMultiplier", "INTEGER");
+                        DbColumnCheck(command, "MovieCutRecord", "multiplierProgress", "REAL");
+                        DbColumnCheck(command, "MovieCutRecord", "batteryEnergyLevel", "INTEGER");
+                        DbColumnCheck(command, "MovieCutRecord", "energy", "REAL");
+                        DbColumnCheck(command, "MovieCutRecord", "softFailed", "INTEGER");
                         DbColumnCheck(command, "NoteScore", "beforeScore", "INTEGER");
+                        DbColumnCheck(command, "NoteScore", "rawScore", "INTEGER");
+                        DbColumnCheck(command, "NoteScore", "softFailed", "INTEGER");
                     }
                 }
                 catch (Exception e) {
