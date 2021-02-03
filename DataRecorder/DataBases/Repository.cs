@@ -6,6 +6,7 @@ using DataRecorder.Enums;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -39,101 +40,120 @@ namespace DataRecorder.DataBases
         /// データベース書き込みのタイムアウト時間[ms]
         /// </summary>
         private const int databaseTimeout = 10000;
-        #endregion
-        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
-        #region // オーバーライドメソッド
-        #endregion
-        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
-        #region // パブリックメソッド
-        /// <summary>
-        /// 初期化処理
-        /// </summary>
-        public void Initialize()
-        {
-            if (!File.Exists(PluginConfig.Instance.DBFile)) {
-                if (!Directory.Exists(Path.GetDirectoryName(PluginConfig.DataBaseFilePath))) {
-                    Directory.CreateDirectory(Path.GetDirectoryName(PluginConfig.DataBaseFilePath));
-                }
-                PluginConfig.Instance.DBFile = PluginConfig.DataBaseFilePath;
-            }
-            this.CreateTable();
-            this.thread = new Thread(new ThreadStart(this.DbInsertEvent));
-            this.thread.Start();
-        }
 
-        /// <summary>
-        /// データベースのタイムアウト処理
-        /// </summary>
-        public void DbTimeoutCheck()
-        {
-            if (this.databaseInsertTime != null) {
-                if (Utility.GetCurrentTime() - this.databaseInsertTime > databaseTimeout) {
-                    Logger.Error("DB Timeout Error");
-                    this._connection?.Dispose();
-                    this.databaseInsertTime = null;
-                    this.playDataAddFlag = false;
-                    this.pauseEventAddFlag = null;
-                }
-            }
-        }
-        #endregion
-        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
-        #region // プライベートメソッド
-        /// <summary>
-        /// 非同期用データベース書き込み処理
-        /// </summary>
-        private void DbInsertEvent()
-        {
-            while (true) {
-                if (this.playDataAddFlag) this.PlayDataAdd();
-                if (this.pauseEventAddFlag != null) this.PauseEventAdd(this.pauseEventAddFlag);
-                Thread.Sleep(1);
-            }
-        }
+        // データベースパラメータ用文字列
+        private const string sTime = "time";
+        private const string sEvent = "event";
+        private const string sEndTime = "endTime";
+        private const string sMenuTime = "menuTime";
+        private const string sCleared = "cleared";
+        private const string sEndFlag = "endFlag";
+        private const string sPauseCount = "pauseCount";
+        private const string sPluginVersion = "pluginVersion";
+        private const string sGameVersion = "gameVersion";
+        private const string sScene = "scene";
+        private const string sMode = "mode";
+        private const string sSongName = "songName";
+        private const string sSongSubName = "songSubName";
+        private const string sSongAuthorName = "songAuthorName";
+        private const string sLevelAuthorName = "levelAuthorName";
+        private const string sLength = "length";
+        private const string sSongHash = "songHash";
+        private const string sLevelId = "levelId";
+        private const string sSongBPM = "songBPM";
+        private const string sNoteJumpSpeed = "noteJumpSpeed";
+        private const string sSongTimeOffset = "songTimeOffset";
+        private const string sStart = "start";
+        private const string sPaused = "paused";
+        private const string sDifficulty = "difficulty";
+        private const string sNotesCount = "notesCount";
+        private const string sBombsCount = "bombsCount";
+        private const string sObstaclesCount = "obstaclesCount";
+        private const string sMaxScore = "maxScore";
+        private const string sMaxRank = "maxRank";
+        private const string sEnvironmentName = "environmentName";
+        private const string sScorePercentage = "scorePercentage";
+        private const string sScore = "score";
+        private const string sCurrentMaxScore = "currentMaxScore";
+        private const string sRank = "rank";
+        private const string sPassedNotes = "passedNotes";
+        private const string sHitNotes = "hitNotes";
+        private const string sMissedNotes = "missedNotes";
+        private const string sLastNoteScore = "lastNoteScore";
+        private const string sPassedBombs = "passedBombs";
+        private const string sHitBombs = "hitBombs";
+        private const string sCombo = "combo";
+        private const string sMaxCombo = "maxCombo";
+        private const string sMultiplier = "multiplier";
+        private const string sObstacles = "obstacles";
+        private const string sInstaFail = "instaFail";
+        private const string sNoFail = "noFail";
+        private const string sBatteryEnergy = "batteryEnergy";
+        private const string sDisappearingArrows = "disappearingArrows";
+        private const string sNoBombs = "noBombs";
+        private const string sSongSpeed = "songSpeed";
+        private const string sSongSpeedMultiplier = "songSpeedMultiplier";
+        private const string sNoArrows = "noArrows";
+        private const string sGhostNotes = "ghostNotes";
+        private const string sFailOnSaberClash = "failOnSaberClash";
+        private const string sStrictAngles = "strictAngles";
+        private const string sFastNotes = "fastNotes";
+        private const string sStaticLights = "staticLights";
+        private const string sLeftHanded = "leftHanded";
+        private const string sPlayerHeight = "playerHeight";
+        private const string sReduceDebris = "reduceDebris";
+        private const string sNoHUD = "noHUD";
+        private const string sAdvancedHUD = "advancedHUD";
+        private const string sAutoRestart = "autoRestart";
+        private const string sCutTime = "cutTime";
+        private const string sStartTime = "startTime";
+        private const string sMultiplierProgress = "multiplierProgress";
+        private const string sNoteID = "noteID";
+        private const string sNoteType = "noteType";
+        private const string sNoteCutDirection = "noteCutDirection";
+        private const string sNoteLine = "noteLine";
+        private const string sNoteLayer = "noteLayer";
+        private const string sSpeedOK = "speedOK";
+        private const string sDirectionOK = "directionOK";
+        private const string sSaberTypeOK = "saberTypeOK";
+        private const string sWasCutTooSoon = "wasCutTooSoon";
+        private const string sInitialScore = "initialScore";
+        private const string sBeforeScore = "beforeScore";
+        private const string sAfterScore = "afterScore";
+        private const string sCutDistanceScore = "cutDistanceScore";
+        private const string sFinalScore = "finalScore";
+        private const string sCutMultiplier = "cutMultiplier";
+        private const string sSaberSpeed = "saberSpeed";
+        private const string sSaberDirX = "saberDirX";
+        private const string sSaberDirY = "saberDirY";
+        private const string sSaberDirZ = "saberDirZ";
+        private const string sSaberType = "saberType";
+        private const string sSwingRating = "swingRating";
+        private const string sSwingRatingFullyCut = "swingRatingFullyCut";
+        private const string sTimeDeviation = "timeDeviation";
+        private const string sCutDirectionDeviation = "cutDirectionDeviation";
+        private const string sCutPointX = "cutPointX";
+        private const string sCutPointY = "cutPointY";
+        private const string sCutPointZ = "cutPointZ";
+        private const string sCutNormalX = "cutNormalX";
+        private const string sCutNormalY = "cutNormalY";
+        private const string sCutNormalZ = "cutNormalZ";
+        private const string sCutDistanceToCenter = "cutDistanceToCenter";
+        private const string sTimeToNextBasicNote = "timeToNextBasicNote";
+        private const string sEnergy = "energy";
 
-        /// <summary>
-        /// pause , resume イベント記録
-        /// </summary>
-        private void PauseEventAdd(BeatSaberEvent? bs_event)
-        {
-            Logger.Debug("PauseEventAdd call");
-            this.databaseInsertTime = Utility.GetCurrentTime();
-            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
-                this._connection.Open();
-                try {
-                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
-                        command.CommandText = "insert into MovieCutPause(time, event) values (@time, @event)";
-                        command.Parameters.Add(new SQLiteParameter("@time", Utility.GetCurrentTime()));
-                        command.Parameters.Add(new SQLiteParameter("@event", bs_event.GetDescription()));
-                        var result = command.ExecuteNonQuery();
-                        // データ更新できない場合
-                        if (result != 1)
-                            Logger.Error("DB NoteScore MovieCutPause Error");
-                    }
-                }
-                catch (Exception e) {
-                    Logger.Error(e);
-                }
-            }
-            this.databaseInsertTime = null;
-            this.pauseEventAddFlag = null;
-        }
+        // データベース書き込み用
+        private const string sBomb = "Bomb";
+        private const string sNoteA = "NoteA";
+        private const string sNoteB = "NoteB";
 
-        /// <summary>
-        /// プレイデータの記録
-        /// </summary>
-        private void PlayDataAdd()
-        {
-            long addStartTime = Utility.GetCurrentTime();
-            Logger.Debug("PlayDataAdd call");
-            this.databaseInsertTime = Utility.GetCurrentTime();
-            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
-                this._connection.Open();
-                SQLiteTransaction transaction = null;
-                try {
-                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
-                        var gameStatus = this._gameStatus;
-                        command.CommandText = @"
+        ///
+        ///データベースSQL文
+        ///
+        // pause , resume イベント記録
+        private const string sqlPauseEventAdd = "INSERT INTO MovieCutPause(time, event) VALUES (@time, @event)";
+        // プレイデータの記録 BeatMap情報
+        private const string sqlPlayDataAddBeatMap = @"
                             INSERT INTO MovieCutRecord(
                                 startTime,
                                 endTime,
@@ -261,90 +281,357 @@ namespace DataRecorder.DataBases
                                 @advancedHUD,
                                 @autoRestart
                             )
-                        ";
+        ";
+        // プレイデータの記録 NoteCut情報
+        private const string sqlPlayDataAddNoteCut = @"
+                                                INSERT INTO NoteScore(
+                                                    time,
+                                                    cutTime,
+                                                    startTime,
+                                                    event,
+                                                    score,
+                                                    currentMaxScore,
+                                                    rank,
+                                                    passedNotes,
+                                                    hitNotes,
+                                                    missedNotes,
+                                                    lastNoteScore,
+                                                    passedBombs,
+                                                    hitBombs,
+                                                    combo,
+                                                    maxCombo,
+                                                    multiplier,
+                                                    multiplierProgress,
+                                                    batteryEnergy,
+                                                    noteID,
+                                                    noteType,
+                                                    noteCutDirection,
+                                                    noteLine,
+                                                    noteLayer,
+                                                    speedOK,
+                                                    directionOK,
+                                                    saberTypeOK,
+                                                    wasCutTooSoon,
+                                                    initialScore,
+                                                    beforeScore,
+                                                    afterScore,
+                                                    cutDistanceScore,
+                                                    finalScore,
+                                                    cutMultiplier,
+                                                    saberSpeed,
+                                                    saberDirX,
+                                                    saberDirY,
+                                                    saberDirZ,
+                                                    saberType,
+                                                    swingRating,
+                                                    swingRatingFullyCut,
+                                                    timeDeviation,
+                                                    cutDirectionDeviation,
+                                                    cutPointX,
+                                                    cutPointY,
+                                                    cutPointZ,
+                                                    cutNormalX,
+                                                    cutNormalY,
+                                                    cutNormalZ,
+                                                    cutDistanceToCenter,
+                                                    timeToNextBasicNote
+                                                ) VALUES (
+                                                    @time,
+                                                    @cutTime,
+                                                    @startTime,
+                                                    @event,
+                                                    @score,
+                                                    @currentMaxScore,
+                                                    @rank,
+                                                    @passedNotes,
+                                                    @hitNotes,
+                                                    @missedNotes,
+                                                    @lastNoteScore,
+                                                    @passedBombs,
+                                                    @hitBombs,
+                                                    @combo,
+                                                    @maxCombo,
+                                                    @multiplier,
+                                                    @multiplierProgress,
+                                                    @batteryEnergy,
+                                                    @noteID,
+                                                    @noteType,
+                                                    @noteCutDirection,
+                                                    @noteLine,
+                                                    @noteLayer,
+                                                    @speedOK,
+                                                    @directionOK,
+                                                    @saberTypeOK,
+                                                    @wasCutTooSoon,
+                                                    @initialScore,
+                                                    @beforeScore,
+                                                    @afterScore,
+                                                    @cutDistanceScore,
+                                                    @finalScore,
+                                                    @cutMultiplier,
+                                                    @saberSpeed,
+                                                    @saberDirX,
+                                                    @saberDirY,
+                                                    @saberDirZ,
+                                                    @saberType,
+                                                    @swingRating,
+                                                    @swingRatingFullyCut,
+                                                    @timeDeviation,
+                                                    @cutDirectionDeviation,
+                                                    @cutPointX,
+                                                    @cutPointY,
+                                                    @cutPointZ,
+                                                    @cutNormalX,
+                                                    @cutNormalY,
+                                                    @cutNormalZ,
+                                                    @cutDistanceToCenter,
+                                                    @timeToNextBasicNote
+                                                )
+        ";
+        // プレイデータの記録 エネルギー変化記録
+        private const string sqlPlayDataAddEnergy = "INSERT INTO EnergyChange(time, energy) VALUES (@time, @energy)";
+        #endregion
+        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+        #region // オーバーライドメソッド
+        #endregion
+        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+        #region // パブリックメソッド
+        /// <summary>
+        /// 初期化処理
+        /// </summary>
+        public void Initialize()
+        {
+            if (!File.Exists(PluginConfig.Instance.DBFile)) {
+                if (!Directory.Exists(Path.GetDirectoryName(PluginConfig.DataBaseFilePath))) {
+                    Directory.CreateDirectory(Path.GetDirectoryName(PluginConfig.DataBaseFilePath));
+                }
+                PluginConfig.Instance.DBFile = PluginConfig.DataBaseFilePath;
+            }
+            this.CreateTable();
+            this.thread = new Thread(new ThreadStart(this.DbInsertEvent));
+            this.thread.Start();
+        }
+
+        /// <summary>
+        /// データベースのタイムアウト処理
+        /// </summary>
+        public void DbTimeoutCheck()
+        {
+            if (this.databaseInsertTime != null) {
+                if (Utility.GetCurrentTime() - this.databaseInsertTime > databaseTimeout) {
+                    Logger.Error("DB Timeout Error");
+                    this._connection?.Dispose();
+                    this.databaseInsertTime = null;
+                    this.playDataAddFlag = false;
+                    this.pauseEventAddFlag = null;
+                }
+            }
+        }
+        #endregion
+        //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
+        #region // プライベートメソッド
+        /// <summary>
+        /// 非同期用データベース書き込み処理
+        /// </summary>
+        private void DbInsertEvent()
+        {
+            while (true) {
+                if (this.playDataAddFlag) this.PlayDataAdd();
+                if (this.pauseEventAddFlag != null) this.PauseEventAdd(this.pauseEventAddFlag);
+                Thread.Sleep(1);
+            }
+        }
+
+        /// <summary>
+        /// pause , resume イベント記録
+        /// </summary>
+        private void PauseEventAdd(BeatSaberEvent? bs_event)
+        {
+            Logger.Debug("PauseEventAdd call");
+            this.databaseInsertTime = Utility.GetCurrentTime();
+            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
+                this._connection.Open();
+                try {
+                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
+                        command.CommandText = sqlPauseEventAdd;
+                        command.Parameters.Add(sTime, System.Data.DbType.Int64);
+                        command.Parameters[sTime].Value = Utility.GetCurrentTime();
+                        command.Parameters.Add(sEvent, System.Data.DbType.String);
+                        command.Parameters[sEvent].Value = bs_event.GetDescription();
+                        var result = command.ExecuteNonQuery();
+                        // データ更新できない場合
+                        if (result != 1)
+                            Logger.Error("DB NoteScore MovieCutPause Error");
+                    }
+                }
+                catch (Exception e) {
+                    Logger.Error(e);
+                }
+            }
+            this.databaseInsertTime = null;
+            this.pauseEventAddFlag = null;
+        }
+
+        /// <summary>
+        /// プレイデータの記録
+        /// </summary>
+        private void PlayDataAdd()
+        {
+            long addStartTime = Utility.GetCurrentTime();
+            Logger.Debug("PlayDataAdd call");
+            this.databaseInsertTime = Utility.GetCurrentTime();
+            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
+                this._connection.Open();
+                SQLiteTransaction transaction = null;
+                try {
+                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
+                        var gameStatus = this._gameStatus;
+                        command.CommandText = sqlPlayDataAddBeatMap;
                         #region // MovieCutRecordテーブルINSERT
                         //独自カラム
-                        command.Parameters.Add(new SQLiteParameter("@startTime", gameStatus.startTime));
-                        command.Parameters.Add(new SQLiteParameter("@endTime", gameStatus.endTime));
-                        command.Parameters.Add(new SQLiteParameter("@menuTime", Utility.GetCurrentTime()));
-                        command.Parameters.Add(new SQLiteParameter("@cleared", gameStatus.cleared.GetDescription()));
-                        command.Parameters.Add(new SQLiteParameter("@endFlag", gameStatus.endFlag));
-                        command.Parameters.Add(new SQLiteParameter("@pauseCount", gameStatus.pauseCount));
+                        command.Parameters.Add(sStartTime, DbType.Int64);
+                        command.Parameters[sStartTime].Value = gameStatus.startTime;
+                        command.Parameters.Add(sEndTime, DbType.Int64);
+                        command.Parameters[sEndTime].Value = gameStatus.endTime;
+                        command.Parameters.Add(sMenuTime, DbType.Int64);
+                        command.Parameters[sMenuTime].Value = Utility.GetCurrentTime();
+                        command.Parameters.Add(sCleared, DbType.String);
+                        command.Parameters[sCleared].Value = gameStatus.cleared.GetDescription();
+                        command.Parameters.Add(sEndFlag, DbType.Int32);
+                        command.Parameters[sEndFlag].Value = gameStatus.endFlag;
+                        command.Parameters.Add(sPauseCount, DbType.Int32);
+                        command.Parameters[sPauseCount].Value = gameStatus.pauseCount;
                         //gameステータス
-                        command.Parameters.Add(new SQLiteParameter("@pluginVersion", Utility.GetPluginVersion()));
-                        command.Parameters.Add(new SQLiteParameter("@gameVersion", Utility.GetGameVersion()));
-                        command.Parameters.Add(new SQLiteParameter("@scene", gameStatus.scene.GetDescription()));
-                        command.Parameters.Add(new SQLiteParameter("@mode", gameStatus.mode == null ? null : (gameStatus.partyMode ? "Party" : "Solo") + gameStatus.mode));
+                        command.Parameters.Add(sPluginVersion, DbType.String);
+                        command.Parameters[sPluginVersion].Value = Utility.GetPluginVersion();
+                        command.Parameters.Add(sGameVersion, DbType.String);
+                        command.Parameters[sGameVersion].Value = Utility.GetGameVersion();
+                        command.Parameters.Add(sScene, DbType.String);
+                        command.Parameters[sScene].Value = gameStatus.scene.GetDescription();
+                        command.Parameters.Add(sMode, DbType.String);
+                        command.Parameters[sMode].Value = gameStatus.mode == null ? null : (gameStatus.partyMode ? "Party" : "Solo") + gameStatus.mode;
                         //beatmapステータス
-                        command.Parameters.Add(new SQLiteParameter("@songName", gameStatus.songName));
-                        command.Parameters.Add(new SQLiteParameter("@songSubName", gameStatus.songSubName));
-                        command.Parameters.Add(new SQLiteParameter("@songAuthorName", gameStatus.songAuthorName));
-                        command.Parameters.Add(new SQLiteParameter("@levelAuthorName", gameStatus.levelAuthorName));
-                        command.Parameters.Add(new SQLiteParameter("@length", gameStatus.length));
-                        command.Parameters.Add(new SQLiteParameter("@songHash", gameStatus.songHash));
-                        command.Parameters.Add(new SQLiteParameter("@levelId", gameStatus.levelId));
-                        command.Parameters.Add(new SQLiteParameter("@songBPM", gameStatus.songBPM));
-                        command.Parameters.Add(new SQLiteParameter("@noteJumpSpeed", gameStatus.noteJumpSpeed));
-                        command.Parameters.Add(new SQLiteParameter("@songTimeOffset", gameStatus.songTimeOffset));
+                        command.Parameters.Add(sSongName, DbType.String);
+                        command.Parameters[sSongName].Value = gameStatus.songName;
+                        command.Parameters.Add(sSongSubName, DbType.String);
+                        command.Parameters[sSongSubName].Value = gameStatus.songSubName;
+                        command.Parameters.Add(sSongAuthorName, DbType.String);
+                        command.Parameters[sSongAuthorName].Value = gameStatus.songAuthorName;
+                        command.Parameters.Add(sLevelAuthorName, DbType.String);
+                        command.Parameters[sLevelAuthorName].Value = gameStatus.levelAuthorName;
+                        command.Parameters.Add(sLength, DbType.Int64);
+                        command.Parameters[sLength].Value = gameStatus.length;
+                        command.Parameters.Add(sSongHash, DbType.String);
+                        command.Parameters[sSongHash].Value = gameStatus.songHash;
+                        command.Parameters.Add(sLevelId, DbType.String);
+                        command.Parameters[sLevelId].Value = gameStatus.levelId;
+                        command.Parameters.Add(sSongBPM, DbType.Single);
+                        command.Parameters[sSongBPM].Value = gameStatus.songBPM;
+                        command.Parameters.Add(sNoteJumpSpeed, DbType.Single);
+                        command.Parameters[sNoteJumpSpeed].Value = gameStatus.noteJumpSpeed;
+                        command.Parameters.Add(sSongTimeOffset, DbType.Int64);
+                        command.Parameters[sSongTimeOffset].Value = gameStatus.songTimeOffset;
+                        command.Parameters.Add(sStart, DbType.Int64);
+                        command.Parameters.Add(sPaused, DbType.Int64);
                         if (gameStatus.start == 0)
-                            command.Parameters.Add(new SQLiteParameter("@start", null));
+                            command.Parameters[sStart].Value = null;
                         else
-                            command.Parameters.Add(new SQLiteParameter("@start", gameStatus.start));
+                            command.Parameters[sStart].Value = gameStatus.start;
                         if (gameStatus.paused == 0)
-                            command.Parameters.Add(new SQLiteParameter("@paused", null));
+                            command.Parameters[sPaused].Value = null;
                         else
-                            command.Parameters.Add(new SQLiteParameter("@paused", gameStatus.paused));
-                        command.Parameters.Add(new SQLiteParameter("@difficulty", gameStatus.difficulty));
-                        command.Parameters.Add(new SQLiteParameter("@notesCount", gameStatus.notesCount));
-                        command.Parameters.Add(new SQLiteParameter("@bombsCount", gameStatus.bombsCount));
-                        command.Parameters.Add(new SQLiteParameter("@obstaclesCount", gameStatus.obstaclesCount));
-                        command.Parameters.Add(new SQLiteParameter("@maxScore", gameStatus.maxScore));
-                        command.Parameters.Add(new SQLiteParameter("@maxRank", gameStatus.maxRank.ToString()));
-                        command.Parameters.Add(new SQLiteParameter("@environmentName", gameStatus.environmentName));
+                            command.Parameters[sPaused].Value = gameStatus.paused;
+                        command.Parameters.Add(sDifficulty, DbType.String);
+                        command.Parameters[sDifficulty].Value = gameStatus.difficulty;
+                        command.Parameters.Add(sNotesCount, DbType.Int32);
+                        command.Parameters[sNotesCount].Value = gameStatus.notesCount;
+                        command.Parameters.Add(sBombsCount, DbType.Int32);
+                        command.Parameters[sBombsCount].Value = gameStatus.bombsCount;
+                        command.Parameters.Add(sObstaclesCount, DbType.Int32);
+                        command.Parameters[sObstaclesCount].Value = gameStatus.obstaclesCount;
+                        command.Parameters.Add(sMaxScore, DbType.Int32);
+                        command.Parameters[sMaxScore].Value = gameStatus.maxScore;
+                        command.Parameters.Add(sMaxRank, DbType.String);
+                        command.Parameters[sMaxRank].Value = gameStatus.maxRank.ToString();
+                        command.Parameters.Add(sEnvironmentName, DbType.String);
+                        command.Parameters[sEnvironmentName].Value = gameStatus.environmentName;
                         double scorePercentage;
                         if (gameStatus.currentMaxScore == 0)
                             scorePercentage = 0.0;
                         else
                             scorePercentage = double.Parse(String.Format("{0:F2}", ((double)gameStatus.score / (double)gameStatus.currentMaxScore) * 100.0));
-                        command.Parameters.Add(new SQLiteParameter("@scorePercentage", scorePercentage));
+                        command.Parameters.Add(sScorePercentage, DbType.Double);
+                        command.Parameters[sScorePercentage].Value = scorePercentage;
                         //performanceステータス
-                        command.Parameters.Add(new SQLiteParameter("@score", gameStatus.score));
-                        command.Parameters.Add(new SQLiteParameter("@currentMaxScore", gameStatus.currentMaxScore));
-                        command.Parameters.Add(new SQLiteParameter("@rank", RankModel.GetRankName(gameStatus.rank)));
-                        command.Parameters.Add(new SQLiteParameter("@passedNotes", gameStatus.passedNotes));
-                        command.Parameters.Add(new SQLiteParameter("@hitNotes", gameStatus.hitNotes));
-                        command.Parameters.Add(new SQLiteParameter("@missedNotes", gameStatus.missedNotes));
-                        command.Parameters.Add(new SQLiteParameter("@lastNoteScore", gameStatus.lastNoteScore));
-                        command.Parameters.Add(new SQLiteParameter("@passedBombs", gameStatus.passedBombs));
-                        command.Parameters.Add(new SQLiteParameter("@hitBombs", gameStatus.hitBombs));
-                        command.Parameters.Add(new SQLiteParameter("@combo", gameStatus.combo));
-                        command.Parameters.Add(new SQLiteParameter("@maxCombo", gameStatus.maxCombo));
+                        command.Parameters.Add(sScore, DbType.Int32);
+                        command.Parameters[sScore].Value = gameStatus.score;
+                        command.Parameters.Add(sCurrentMaxScore, DbType.Int32);
+                        command.Parameters[sCurrentMaxScore].Value = gameStatus.currentMaxScore;
+                        command.Parameters.Add(sRank, DbType.String);
+                        command.Parameters[sRank].Value = RankModel.GetRankName(gameStatus.rank);
+                        command.Parameters.Add(sPassedNotes, DbType.Int32);
+                        command.Parameters[sPassedNotes].Value = gameStatus.passedNotes;
+                        command.Parameters.Add(sHitNotes, DbType.Int32);
+                        command.Parameters[sHitNotes].Value = gameStatus.hitNotes;
+                        command.Parameters.Add(sMissedNotes, DbType.Int32);
+                        command.Parameters[sMissedNotes].Value = gameStatus.missedNotes;
+                        command.Parameters.Add(sLastNoteScore, DbType.Int32);
+                        command.Parameters[sLastNoteScore].Value = gameStatus.lastNoteScore;
+                        command.Parameters.Add(sPassedBombs, DbType.Int32);
+                        command.Parameters[sPassedBombs].Value = gameStatus.passedBombs;
+                        command.Parameters.Add(sHitBombs, DbType.Int32);
+                        command.Parameters[sHitBombs].Value = gameStatus.hitBombs;
+                        command.Parameters.Add(sCombo, DbType.Int32);
+                        command.Parameters[sCombo].Value = gameStatus.combo;
+                        command.Parameters.Add(sMaxCombo, DbType.Int32);
+                        command.Parameters[sMaxCombo].Value = gameStatus.maxCombo;
                         //modステータス
-                        command.Parameters.Add(new SQLiteParameter("@multiplier", gameStatus.modifierMultiplier));
+                        command.Parameters.Add(sMultiplier, DbType.Single);
+                        command.Parameters[sMultiplier].Value = gameStatus.modifierMultiplier;
+                        command.Parameters.Add(sObstacles, DbType.String);
                         if (gameStatus.modObstacles == GameplayModifiers.EnabledObstacleType.NoObstacles)
-                            command.Parameters.Add(new SQLiteParameter("@obstacles", 0));
+                            command.Parameters[sObstacles].Value = 0;
                         else
-                            command.Parameters.Add(new SQLiteParameter("@obstacles", gameStatus.modObstacles.ToString()));
-                        command.Parameters.Add(new SQLiteParameter("@instaFail", gameStatus.modInstaFail));
-                        command.Parameters.Add(new SQLiteParameter("@noFail", gameStatus.modNoFail));
-                        command.Parameters.Add(new SQLiteParameter("@batteryEnergy", gameStatus.modBatteryEnergy));
-                        command.Parameters.Add(new SQLiteParameter("@disappearingArrows", gameStatus.modDisappearingArrows));
-                        command.Parameters.Add(new SQLiteParameter("@noBombs", gameStatus.modNoBombs));
-                        command.Parameters.Add(new SQLiteParameter("@songSpeed", gameStatus.modSongSpeed.ToString()));
-                        command.Parameters.Add(new SQLiteParameter("@songSpeedMultiplier", gameStatus.songSpeedMultiplier));
-                        command.Parameters.Add(new SQLiteParameter("@noArrows", gameStatus.modNoArrows));
-                        command.Parameters.Add(new SQLiteParameter("@ghostNotes", gameStatus.modGhostNotes));
-                        command.Parameters.Add(new SQLiteParameter("@failOnSaberClash", gameStatus.modFailOnSaberClash));
-                        command.Parameters.Add(new SQLiteParameter("@strictAngles", gameStatus.modStrictAngles));
-                        command.Parameters.Add(new SQLiteParameter("@fastNotes", gameStatus.modFastNotes));
+                            command.Parameters[sObstacles].Value = gameStatus.modObstacles.ToString();
+                        command.Parameters.Add(sInstaFail, DbType.Boolean);
+                        command.Parameters[sInstaFail].Value = gameStatus.modInstaFail;
+                        command.Parameters.Add(sNoFail, DbType.Boolean);
+                        command.Parameters[sNoFail].Value = gameStatus.modNoFail;
+                        command.Parameters.Add(sBatteryEnergy, DbType.Boolean);
+                        command.Parameters[sBatteryEnergy].Value = gameStatus.modBatteryEnergy;
+                        command.Parameters.Add(sDisappearingArrows, DbType.Boolean);
+                        command.Parameters[sDisappearingArrows].Value = gameStatus.modDisappearingArrows;
+                        command.Parameters.Add(sNoBombs, DbType.Boolean);
+                        command.Parameters[sNoBombs].Value = gameStatus.modNoBombs;
+                        command.Parameters.Add(sSongSpeed, DbType.String);
+                        command.Parameters[sSongSpeed].Value = gameStatus.modSongSpeed.ToString();
+                        command.Parameters.Add(sSongSpeedMultiplier, DbType.Single);
+                        command.Parameters[sSongSpeedMultiplier].Value = gameStatus.songSpeedMultiplier;
+                        command.Parameters.Add(sNoArrows, DbType.Boolean);
+                        command.Parameters[sNoArrows].Value = gameStatus.modNoArrows;
+                        command.Parameters.Add(sGhostNotes, DbType.Boolean);
+                        command.Parameters[sGhostNotes].Value = gameStatus.modGhostNotes;
+                        command.Parameters.Add(sFailOnSaberClash, DbType.Boolean);
+                        command.Parameters[sFailOnSaberClash].Value = gameStatus.modFailOnSaberClash;
+                        command.Parameters.Add(sStrictAngles, DbType.Boolean);
+                        command.Parameters[sStrictAngles].Value = gameStatus.modStrictAngles;
+                        command.Parameters.Add(sFastNotes, DbType.Boolean);
+                        command.Parameters[sFastNotes].Value = gameStatus.modFastNotes;
                         //playerSettingsステータス
-                        command.Parameters.Add(new SQLiteParameter("@staticLights", gameStatus.staticLights));
-                        command.Parameters.Add(new SQLiteParameter("@leftHanded", gameStatus.leftHanded));
-                        command.Parameters.Add(new SQLiteParameter("@playerHeight", gameStatus.playerHeight));
-                        command.Parameters.Add(new SQLiteParameter("@reduceDebris", gameStatus.reduceDebris));
-                        command.Parameters.Add(new SQLiteParameter("@noHUD", gameStatus.noHUD));
-                        command.Parameters.Add(new SQLiteParameter("@advancedHUD", gameStatus.advancedHUD));
-                        command.Parameters.Add(new SQLiteParameter("@autoRestart", gameStatus.autoRestart));
+                        command.Parameters.Add(sStaticLights, DbType.Boolean);
+                        command.Parameters[sStaticLights].Value = gameStatus.staticLights;
+                        command.Parameters.Add(sLeftHanded, DbType.Boolean);
+                        command.Parameters[sLeftHanded].Value = gameStatus.leftHanded;
+                        command.Parameters.Add(sPlayerHeight, DbType.Single);
+                        command.Parameters[sPlayerHeight].Value = gameStatus.playerHeight;
+                        command.Parameters.Add(sReduceDebris, DbType.Boolean);
+                        command.Parameters[sReduceDebris].Value = gameStatus.reduceDebris;
+                        command.Parameters.Add(sNoHUD, DbType.Boolean);
+                        command.Parameters[sNoHUD].Value = gameStatus.noHUD;
+                        command.Parameters.Add(sAdvancedHUD, DbType.Boolean);
+                        command.Parameters[sAdvancedHUD].Value = gameStatus.advancedHUD;
+                        command.Parameters.Add(sAutoRestart, DbType.Boolean);
+                        command.Parameters[sAutoRestart].Value = gameStatus.autoRestart;
                         var result = command.ExecuteNonQuery();
                         // データ更新できない場合
                         if (result != 1) 
@@ -353,202 +640,147 @@ namespace DataRecorder.DataBases
 
                         #region // NoteScore
                         // トランザクションを開始します。
-                        transaction = this._connection.BeginTransaction();
-                        command.CommandText = @"
-                                            INSERT INTO NoteScore(
-                                                time,
-                                                cutTime,
-                                                startTime,
-                                                event,
-                                                score,
-                                                currentMaxScore,
-                                                rank,
-                                                passedNotes,
-                                                hitNotes,
-                                                missedNotes,
-                                                lastNoteScore,
-                                                passedBombs,
-                                                hitBombs,
-                                                combo,
-                                                maxCombo,
-                                                multiplier,
-                                                multiplierProgress,
-                                                batteryEnergy,
-                                                noteID,
-                                                noteType,
-                                                noteCutDirection,
-                                                noteLine,
-                                                noteLayer,
-                                                speedOK,
-                                                directionOK,
-                                                saberTypeOK,
-                                                wasCutTooSoon,
-                                                initialScore,
-                                                beforeScore,
-                                                afterScore,
-                                                cutDistanceScore,
-                                                finalScore,
-                                                cutMultiplier,
-                                                saberSpeed,
-                                                saberDirX,
-                                                saberDirY,
-                                                saberDirZ,
-                                                saberType,
-                                                swingRating,
-                                                swingRatingFullyCut,
-                                                timeDeviation,
-                                                cutDirectionDeviation,
-                                                cutPointX,
-                                                cutPointY,
-                                                cutPointZ,
-                                                cutNormalX,
-                                                cutNormalY,
-                                                cutNormalZ,
-                                                cutDistanceToCenter,
-                                                timeToNextBasicNote
-                                            ) VALUES (
-                                                @time,
-                                                @cutTime,
-                                                @startTime,
-                                                @event,
-                                                @score,
-                                                @currentMaxScore,
-                                                @rank,
-                                                @passedNotes,
-                                                @hitNotes,
-                                                @missedNotes,
-                                                @lastNoteScore,
-                                                @passedBombs,
-                                                @hitBombs,
-                                                @combo,
-                                                @maxCombo,
-                                                @multiplier,
-                                                @multiplierProgress,
-                                                @batteryEnergy,
-                                                @noteID,
-                                                @noteType,
-                                                @noteCutDirection,
-                                                @noteLine,
-                                                @noteLayer,
-                                                @speedOK,
-                                                @directionOK,
-                                                @saberTypeOK,
-                                                @wasCutTooSoon,
-                                                @initialScore,
-                                                @beforeScore,
-                                                @afterScore,
-                                                @cutDistanceScore,
-                                                @finalScore,
-                                                @cutMultiplier,
-                                                @saberSpeed,
-                                                @saberDirX,
-                                                @saberDirY,
-                                                @saberDirZ,
-                                                @saberType,
-                                                @swingRating,
-                                                @swingRatingFullyCut,
-                                                @timeDeviation,
-                                                @cutDirectionDeviation,
-                                                @cutPointX,
-                                                @cutPointY,
-                                                @cutPointZ,
-                                                @cutNormalX,
-                                                @cutNormalY,
-                                                @cutNormalZ,
-                                                @cutDistanceToCenter,
-                                                @timeToNextBasicNote
-                                            )
-                        ";
-                        gameStatus.lastNoteId = 0;
-                        for (gameStatus.noteIndex = 0; gameStatus.noteIndex < gameStatus.noteEndIndex; gameStatus.noteIndex++) {
-                            this.databaseInsertTime = Utility.GetCurrentTime();
-                            var noteScore = gameStatus.NoteDataGet();
-                            command.Parameters.Add(new SQLiteParameter("@time", noteScore.time));
-                            command.Parameters.Add(new SQLiteParameter("@cutTime", noteScore.cutTime));
-                            command.Parameters.Add(new SQLiteParameter("@startTime", gameStatus.startTime));
-                            command.Parameters.Add(new SQLiteParameter("@event", noteScore.bs_event.GetDescription()));
-                            command.Parameters.Add(new SQLiteParameter("@score", noteScore.score));
-                            command.Parameters.Add(new SQLiteParameter("@currentMaxScore", noteScore.currentMaxScore));
-                            command.Parameters.Add(new SQLiteParameter("@rank", RankModel.GetRankName(noteScore.rank)));
-                            command.Parameters.Add(new SQLiteParameter("@passedNotes", noteScore.passedNotes));
-                            command.Parameters.Add(new SQLiteParameter("@hitNotes", noteScore.hitNotes));
-                            command.Parameters.Add(new SQLiteParameter("@missedNotes", noteScore.missedNotes));
-                            command.Parameters.Add(new SQLiteParameter("@lastNoteScore", noteScore.lastNoteScore));
-                            command.Parameters.Add(new SQLiteParameter("@passedBombs", noteScore.passedBombs));
-                            command.Parameters.Add(new SQLiteParameter("@hitBombs", noteScore.hitBombs));
-                            command.Parameters.Add(new SQLiteParameter("@combo", noteScore.combo));
-                            command.Parameters.Add(new SQLiteParameter("@maxCombo", noteScore.maxCombo));
-                            command.Parameters.Add(new SQLiteParameter("@multiplier", noteScore.multiplier));
-                            command.Parameters.Add(new SQLiteParameter("@multiplierProgress", noteScore.multiplierProgress));
-                            command.Parameters.Add(new SQLiteParameter("@batteryEnergy", noteScore.batteryEnergy));
-                            command.Parameters.Add(new SQLiteParameter("@noteID", gameStatus.GetNoteId()));
-                            string noteType = noteScore.colorType == ColorType.None ? "Bomb" : noteScore.colorType == ColorType.ColorA ? "NoteA" : noteScore.colorType == ColorType.ColorB ? "NoteB" : noteScore.colorType.ToString();
-                            command.Parameters.Add(new SQLiteParameter("@noteType", noteType));
-                            command.Parameters.Add(new SQLiteParameter("@noteCutDirection", noteScore.noteCutDirection.ToString()));
-                            command.Parameters.Add(new SQLiteParameter("@noteLine", noteScore.noteLine));
-                            command.Parameters.Add(new SQLiteParameter("@noteLayer", (int)noteScore.noteLayer));
-                            command.Parameters.Add(new SQLiteParameter("@speedOK", noteScore.speedOK));
-                            command.Parameters.Add(new SQLiteParameter("@directionOK", noteScore.directionOK));
-                            command.Parameters.Add(new SQLiteParameter("@saberTypeOK", noteScore.saberTypeOK));
-                            command.Parameters.Add(new SQLiteParameter("@wasCutTooSoon", noteScore.wasCutTooSoon));
-                            command.Parameters.Add(new SQLiteParameter("@initialScore", noteScore.initialScore));
-                            command.Parameters.Add(new SQLiteParameter("@beforeScore", noteScore.initialScore - noteScore.cutDistanceScore));
-                            command.Parameters.Add(new SQLiteParameter("@afterScore", noteScore.finalScore - noteScore.initialScore));
-                            command.Parameters.Add(new SQLiteParameter("@cutDistanceScore", noteScore.cutDistanceScore));
-                            command.Parameters.Add(new SQLiteParameter("@finalScore", noteScore.finalScore));
-                            command.Parameters.Add(new SQLiteParameter("@cutMultiplier", noteScore.cutMultiplier));
-                            command.Parameters.Add(new SQLiteParameter("@saberSpeed", noteScore.saberSpeed));
-                            command.Parameters.Add(new SQLiteParameter("@saberDirX", noteScore.saberDirX));
-                            command.Parameters.Add(new SQLiteParameter("@saberDirY", noteScore.saberDirY));
-                            command.Parameters.Add(new SQLiteParameter("@saberDirZ", noteScore.saberDirZ));
-                            command.Parameters.Add(new SQLiteParameter("@saberType", noteScore.saberType.ToString()));
-                            command.Parameters.Add(new SQLiteParameter("@swingRating", noteScore.swingRating));
-                            command.Parameters.Add(new SQLiteParameter("@swingRatingFullyCut", noteScore.swingRatingFullyCut));
-                            command.Parameters.Add(new SQLiteParameter("@timeDeviation", noteScore.timeDeviation));
-                            command.Parameters.Add(new SQLiteParameter("@cutDirectionDeviation", noteScore.cutDirectionDeviation));
-                            command.Parameters.Add(new SQLiteParameter("@cutPointX", noteScore.cutPointX));
-                            command.Parameters.Add(new SQLiteParameter("@cutPointY", noteScore.cutPointY));
-                            command.Parameters.Add(new SQLiteParameter("@cutPointZ", noteScore.cutPointZ));
-                            command.Parameters.Add(new SQLiteParameter("@cutNormalX", noteScore.cutNormalX));
-                            command.Parameters.Add(new SQLiteParameter("@cutNormalY", noteScore.cutNormalY));
-                            command.Parameters.Add(new SQLiteParameter("@cutNormalZ", noteScore.cutNormalZ));
-                            command.Parameters.Add(new SQLiteParameter("@cutDistanceToCenter", noteScore.cutDistanceToCenter));
-                            command.Parameters.Add(new SQLiteParameter("@timeToNextBasicNote", noteScore.timeToNextBasicNote));
-                            result = command.ExecuteNonQuery();
-                            // データ更新できない場合
-                            if (result != 1) {
-                                Logger.Error("DB NoteScore INSERT Error");
-                                transaction.Rollback();
-                                transaction = null;
-                                break;
+                        using (transaction = this._connection.BeginTransaction()) {
+                            command.CommandText = sqlPlayDataAddNoteCut;
+                            command.Parameters.Add(sTime, DbType.Int64);
+                            command.Parameters.Add(sCutTime, DbType.Int64);
+                            command.Parameters.Add(sStartTime, DbType.Int64);
+                            command.Parameters.Add(sEvent, DbType.String);
+                            command.Parameters.Add(sScore, DbType.Int32);
+                            command.Parameters.Add(sCurrentMaxScore, DbType.Int32);
+                            command.Parameters.Add(sRank, DbType.String);
+                            command.Parameters.Add(sPassedNotes, DbType.Int32);
+                            command.Parameters.Add(sHitNotes, DbType.Int32);
+                            command.Parameters.Add(sMissedNotes, DbType.Int32);
+                            command.Parameters.Add(sLastNoteScore, DbType.Int32);
+                            command.Parameters.Add(sPassedBombs, DbType.Int32);
+                            command.Parameters.Add(sHitBombs, DbType.Int32);
+                            command.Parameters.Add(sCombo, DbType.Int32);
+                            command.Parameters.Add(sMaxCombo, DbType.Int32);
+                            command.Parameters.Add(sMultiplier, DbType.Int32);
+                            command.Parameters.Add(sMultiplierProgress, DbType.Single);
+                            command.Parameters.Add(sBatteryEnergy, DbType.Int32);
+                            command.Parameters.Add(sNoteID, DbType.Int32);
+                            command.Parameters.Add(sNoteType, DbType.String);
+                            command.Parameters.Add(sNoteCutDirection, DbType.String);
+                            command.Parameters.Add(sNoteLine, DbType.Int32);
+                            command.Parameters.Add(sNoteLayer, DbType.Int32);
+                            command.Parameters.Add(sSpeedOK, DbType.Boolean);
+                            command.Parameters.Add(sDirectionOK, DbType.Boolean);
+                            command.Parameters.Add(sSaberTypeOK, DbType.Boolean);
+                            command.Parameters.Add(sWasCutTooSoon, DbType.Boolean);
+                            command.Parameters.Add(sInitialScore, DbType.Int32);
+                            command.Parameters.Add(sBeforeScore, DbType.Int32);
+                            command.Parameters.Add(sAfterScore, DbType.Int32);
+                            command.Parameters.Add(sCutDistanceScore, DbType.Int32);
+                            command.Parameters.Add(sFinalScore, DbType.Int32);
+                            command.Parameters.Add(sCutMultiplier, DbType.Int32);
+                            command.Parameters.Add(sSaberSpeed, DbType.Single);
+                            command.Parameters.Add(sSaberDirX, DbType.Single);
+                            command.Parameters.Add(sSaberDirY, DbType.Single);
+                            command.Parameters.Add(sSaberDirZ, DbType.Single);
+                            command.Parameters.Add(sSaberType, DbType.String);
+                            command.Parameters.Add(sSwingRating, DbType.Single);
+                            command.Parameters.Add(sSwingRatingFullyCut, DbType.Single);
+                            command.Parameters.Add(sTimeDeviation, DbType.Single);
+                            command.Parameters.Add(sCutDirectionDeviation, DbType.Single);
+                            command.Parameters.Add(sCutPointX, DbType.Single);
+                            command.Parameters.Add(sCutPointY, DbType.Single);
+                            command.Parameters.Add(sCutPointZ, DbType.Single);
+                            command.Parameters.Add(sCutNormalX, DbType.Single);
+                            command.Parameters.Add(sCutNormalY, DbType.Single);
+                            command.Parameters.Add(sCutNormalZ, DbType.Single);
+                            command.Parameters.Add(sCutDistanceToCenter, DbType.Single);
+                            command.Parameters.Add(sTimeToNextBasicNote, DbType.Single);
+                            gameStatus.lastNoteId = 0;
+                            for (gameStatus.noteIndex = 0; gameStatus.noteIndex < gameStatus.noteEndIndex; gameStatus.noteIndex++) {
+                                this.databaseInsertTime = Utility.GetCurrentTime();
+                                var noteScore = gameStatus.NoteDataGet();
+                                command.Parameters[sTime].Value = noteScore.time;
+                                command.Parameters[sCutTime].Value = noteScore.cutTime;
+                                command.Parameters[sStartTime].Value = gameStatus.startTime;
+                                command.Parameters[sEvent].Value = noteScore.bs_event.GetDescription();
+                                command.Parameters[sScore].Value = noteScore.score;
+                                command.Parameters[sCurrentMaxScore].Value = noteScore.currentMaxScore;
+                                command.Parameters[sRank].Value = RankModel.GetRankName(noteScore.rank);
+                                command.Parameters[sPassedNotes].Value = noteScore.passedNotes;
+                                command.Parameters[sHitNotes].Value = noteScore.hitNotes;
+                                command.Parameters[sMissedNotes].Value = noteScore.missedNotes;
+                                command.Parameters[sLastNoteScore].Value = noteScore.lastNoteScore;
+                                command.Parameters[sPassedBombs].Value = noteScore.passedBombs;
+                                command.Parameters[sHitBombs].Value = noteScore.hitBombs;
+                                command.Parameters[sCombo].Value = noteScore.combo;
+                                command.Parameters[sMaxCombo].Value = noteScore.maxCombo;
+                                command.Parameters[sMultiplier].Value = noteScore.multiplier;
+                                command.Parameters[sMultiplierProgress].Value = noteScore.multiplierProgress;
+                                command.Parameters[sBatteryEnergy].Value = noteScore.batteryEnergy;
+                                command.Parameters[sNoteID].Value = gameStatus.GetNoteId();
+                                command.Parameters[sNoteType].Value = noteScore.colorType == ColorType.None ? sBomb : noteScore.colorType == ColorType.ColorA ? sNoteA : noteScore.colorType == ColorType.ColorB ? sNoteB : noteScore.colorType.ToString();
+                                command.Parameters[sNoteCutDirection].Value = noteScore.noteCutDirection.ToString();
+                                command.Parameters[sNoteLine].Value = noteScore.noteLine;
+                                command.Parameters[sNoteLayer].Value = (int)noteScore.noteLayer;
+                                command.Parameters[sSpeedOK].Value = noteScore.speedOK;
+                                command.Parameters[sDirectionOK].Value = noteScore.directionOK;
+                                command.Parameters[sSaberTypeOK].Value = noteScore.saberTypeOK;
+                                command.Parameters[sWasCutTooSoon].Value = noteScore.wasCutTooSoon;
+                                command.Parameters[sInitialScore].Value = noteScore.initialScore;
+                                command.Parameters[sBeforeScore].Value = noteScore.initialScore - noteScore.cutDistanceScore;
+                                command.Parameters[sAfterScore].Value = noteScore.finalScore - noteScore.initialScore;
+                                command.Parameters[sCutDistanceScore].Value = noteScore.cutDistanceScore;
+                                command.Parameters[sFinalScore].Value = noteScore.finalScore;
+                                command.Parameters[sCutMultiplier].Value = noteScore.cutMultiplier;
+                                command.Parameters[sSaberSpeed].Value = noteScore.saberSpeed;
+                                command.Parameters[sSaberDirX].Value = noteScore.saberDirX;
+                                command.Parameters[sSaberDirY].Value = noteScore.saberDirY;
+                                command.Parameters[sSaberDirZ].Value = noteScore.saberDirZ;
+                                command.Parameters[sSaberType].Value = noteScore.saberType.ToString();
+                                command.Parameters[sSwingRating].Value = noteScore.swingRating;
+                                command.Parameters[sSwingRatingFullyCut].Value = noteScore.swingRatingFullyCut;
+                                command.Parameters[sTimeDeviation].Value = noteScore.timeDeviation;
+                                command.Parameters[sCutDirectionDeviation].Value = noteScore.cutDirectionDeviation;
+                                command.Parameters[sCutPointX].Value = noteScore.cutPointX;
+                                command.Parameters[sCutPointY].Value = noteScore.cutPointY;
+                                command.Parameters[sCutPointZ].Value = noteScore.cutPointZ;
+                                command.Parameters[sCutNormalX].Value = noteScore.cutNormalX;
+                                command.Parameters[sCutNormalY].Value = noteScore.cutNormalY;
+                                command.Parameters[sCutNormalZ].Value = noteScore.cutNormalZ;
+                                command.Parameters[sCutDistanceToCenter].Value = noteScore.cutDistanceToCenter;
+                                command.Parameters[sTimeToNextBasicNote].Value = noteScore.timeToNextBasicNote;
+                                result = command.ExecuteNonQuery();
+                                // データ更新できない場合
+                                if (result != 1) {
+                                    Logger.Error("DB NoteScore INSERT Error");
+                                    transaction.Rollback();
+                                    transaction = null;
+                                    break;
+                                }
                             }
-                        }
-                        for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
-                            this.databaseInsertTime = Utility.GetCurrentTime();
-                            var energyData = gameStatus.EnergyDataGet();
-                            command.CommandText = "INSERT INTO EnergyChange(time, energy) VALUES (@time, @energy)";
-                            command.Parameters.Add(new SQLiteParameter("@time", energyData.time));
-                            command.Parameters.Add(new SQLiteParameter("@energy", energyData.energy));
-                            result = command.ExecuteNonQuery();
-                            // データ更新できない場合
-                            if (result != 1) {
-                                Logger.Error("DB EnergyChange INSERT Error");
-                                transaction.Rollback();
-                                transaction = null;
-                                break;
+                            command.CommandText = sqlPlayDataAddEnergy;
+                            command.Parameters.Add(sTime, DbType.Int64);
+                            command.Parameters.Add(sEnergy, DbType.Single);
+                            for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
+                                this.databaseInsertTime = Utility.GetCurrentTime();
+                                var energyData = gameStatus.EnergyDataGet();
+                                command.Parameters[sTime].Value = energyData.time;
+                                command.Parameters[sEnergy].Value = energyData.energy;
+                                result = command.ExecuteNonQuery();
+                                // データ更新できない場合
+                                if (result != 1) {
+                                    Logger.Error("DB EnergyChange INSERT Error");
+                                    transaction.Rollback();
+                                    transaction = null;
+                                    break;
+                                }
                             }
+                            transaction?.Commit();
                         }
-                        if (transaction != null)
-                            transaction.Commit();
                         #endregion
                     }
                 }
                 // 例外が発生した場合
                 catch (Exception e) {
                     Logger.Error("DB NoteScore INSERT Error " + e.Message);
-                    // トランザクションが有効な場合
-                    if (transaction != null)
-                        transaction.Rollback();
+                    transaction?.Rollback();
                 }
             }
             this._gameStatus.ResetGameStatus();

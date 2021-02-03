@@ -560,7 +560,6 @@ namespace DataRecorder.Models
                     catch (Exception e) {
                         Logger.Error(e);
                     }
-                    Logger.Debug(Utility.GetCurrentTime().ToString());
                 }
 
                 // TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします
