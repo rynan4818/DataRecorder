@@ -737,9 +737,10 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(sCutDistanceToCenter, DbType.Single);
                             command.Parameters.Add(sTimeToNextBasicNote, DbType.Single);
                             gameStatus.lastNoteId = 0;
+                            NoteDataEntity noteScore;
                             for (gameStatus.noteIndex = 0; gameStatus.noteIndex < gameStatus.noteEndIndex; gameStatus.noteIndex++) {
                                 this.databaseInsertTime = Utility.GetCurrentTime();
-                                var noteScore = gameStatus.NoteDataGet();
+                                noteScore = gameStatus.NoteDataGet();
                                 command.Parameters[sTime].Value = noteScore.time;
                                 command.Parameters[sCutTime].Value = noteScore.cutTime;
                                 command.Parameters[sStartTime].Value = gameStatus.startTime;
@@ -809,9 +810,10 @@ namespace DataRecorder.DataBases
                             command.Parameters.Add(sTime, DbType.Int64);
                             command.Parameters.Add(sEnergy, DbType.Single);
                             long beforeTime = 0;
+                            EnergyDataEntity energyData;
                             for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
                                 this.databaseInsertTime = Utility.GetCurrentTime();
-                                var energyData = gameStatus.EnergyDataGet();
+                                energyData = gameStatus.EnergyDataGet();
                                 if (beforeTime == energyData.time)
                                     energyData.time += 1;
                                 beforeTime = energyData.time;
