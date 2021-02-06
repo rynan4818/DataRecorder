@@ -488,8 +488,8 @@ namespace DataRecorder.DataBases
             this.databaseInsertTime = Utility.GetCurrentTime();
             using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFilePath};Version=3;")) {
                 this._connection.Open();
-                using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
-                    try {
+                try {
+                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
                         command.CommandText = sqlPlayDataAddBeatMap;
                         #region // MovieCutRecordテーブルINSERT
                         //独自カラム
@@ -536,7 +536,7 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(sSongTimeOffset, DbType.Int64);
                         command.Parameters[sSongTimeOffset].Value = gameStatus.songTimeOffset;
                         command.Parameters.Add(sStart, DbType.Int64);
-                        if (gameStatus.start == 0) 
+                        if (gameStatus.start == 0)
                             command.Parameters[sStart].Value = null;
                         else
                             command.Parameters[sStart].Value = gameStatus.start;
@@ -645,169 +645,171 @@ namespace DataRecorder.DataBases
                         command.Parameters[sAutoRestart].Value = gameStatus.autoRestart;
                         if (command.ExecuteNonQuery() != 1) Logger.Error("DB MovieCutRecord Error");
                     }
-                    catch (Exception e) {
-                        Logger.Error("DB MovieCutRecord Error:" + e.Message);
-                    }
-                    #endregion
+                }
+                catch (Exception e) {
+                    Logger.Error("DB MovieCutRecord Error:" + e.Message);
+                }
+                #endregion
 
-                    #region // NoteScoreテーブルINSERT
-                    // トランザクションを開始します。
-                    using (SQLiteTransaction transaction = this._connection.BeginTransaction()) {
-                        try {
-                            command.Reset();
-                            command.CommandText = sqlPlayDataAddNoteCut;
-                            command.Parameters.Add(sTime, DbType.Int64);
-                            command.Parameters.Add(sCutTime, DbType.Int64);
-                            command.Parameters.Add(sStartTime, DbType.Int64);
-                            command.Parameters.Add(sEvent, DbType.String);
-                            command.Parameters.Add(sRawScore, DbType.Int32);
-                            command.Parameters.Add(sScore, DbType.Int32);
-                            command.Parameters.Add(sCurrentMaxScore, DbType.Int32);
-                            command.Parameters.Add(sRank, DbType.String);
-                            command.Parameters.Add(sPassedNotes, DbType.Int32);
-                            command.Parameters.Add(sHitNotes, DbType.Int32);
-                            command.Parameters.Add(sMissedNotes, DbType.Int32);
-                            command.Parameters.Add(sLastNoteScore, DbType.Int32);
-                            command.Parameters.Add(sPassedBombs, DbType.Int32);
-                            command.Parameters.Add(sHitBombs, DbType.Int32);
-                            command.Parameters.Add(sCombo, DbType.Int32);
-                            command.Parameters.Add(sMaxCombo, DbType.Int32);
-                            command.Parameters.Add(sMultiplier, DbType.Int32);
-                            command.Parameters.Add(sMultiplierProgress, DbType.Single);
-                            command.Parameters.Add(sBatteryEnergy, DbType.Int32);
-                            command.Parameters.Add(sSoftFailed, DbType.Boolean);
-                            command.Parameters.Add(sNoteID, DbType.Int32);
-                            command.Parameters.Add(sNoteType, DbType.String);
-                            command.Parameters.Add(sNoteCutDirection, DbType.String);
-                            command.Parameters.Add(sNoteLine, DbType.Int32);
-                            command.Parameters.Add(sNoteLayer, DbType.Int32);
-                            command.Parameters.Add(sSpeedOK, DbType.Boolean);
-                            command.Parameters.Add(sDirectionOK, DbType.Boolean);
-                            command.Parameters.Add(sSaberTypeOK, DbType.Boolean);
-                            command.Parameters.Add(sWasCutTooSoon, DbType.Boolean);
-                            command.Parameters.Add(sInitialScore, DbType.Int32);
-                            command.Parameters.Add(sBeforeScore, DbType.Int32);
-                            command.Parameters.Add(sAfterScore, DbType.Int32);
-                            command.Parameters.Add(sCutDistanceScore, DbType.Int32);
-                            command.Parameters.Add(sFinalScore, DbType.Int32);
-                            command.Parameters.Add(sCutMultiplier, DbType.Int32);
-                            command.Parameters.Add(sSaberSpeed, DbType.Single);
-                            command.Parameters.Add(sSaberDirX, DbType.Single);
-                            command.Parameters.Add(sSaberDirY, DbType.Single);
-                            command.Parameters.Add(sSaberDirZ, DbType.Single);
-                            command.Parameters.Add(sSaberType, DbType.String);
-                            command.Parameters.Add(sSwingRating, DbType.Single);
-                            command.Parameters.Add(sSwingRatingFullyCut, DbType.Single);
-                            command.Parameters.Add(sTimeDeviation, DbType.Single);
-                            command.Parameters.Add(sCutDirectionDeviation, DbType.Single);
-                            command.Parameters.Add(sCutPointX, DbType.Single);
-                            command.Parameters.Add(sCutPointY, DbType.Single);
-                            command.Parameters.Add(sCutPointZ, DbType.Single);
-                            command.Parameters.Add(sCutNormalX, DbType.Single);
-                            command.Parameters.Add(sCutNormalY, DbType.Single);
-                            command.Parameters.Add(sCutNormalZ, DbType.Single);
-                            command.Parameters.Add(sCutDistanceToCenter, DbType.Single);
-                            command.Parameters.Add(sTimeToNextBasicNote, DbType.Single);
-                            gameStatus.lastNoteId = 0;
-                            NoteDataEntity noteScore;
-                            for (gameStatus.noteIndex = 0; gameStatus.noteIndex < gameStatus.noteEndIndex; gameStatus.noteIndex++) {
-                                this.databaseInsertTime = Utility.GetCurrentTime();
-                                noteScore = gameStatus.NoteDataGet();
-                                command.Parameters[sTime].Value = noteScore.time;
-                                command.Parameters[sCutTime].Value = noteScore.cutTime;
-                                command.Parameters[sStartTime].Value = gameStatus.startTime;
-                                command.Parameters[sEvent].Value = noteScore.bs_event.GetDescription();
-                                command.Parameters[sRawScore].Value = noteScore.rawScore;
-                                command.Parameters[sScore].Value = noteScore.score;
-                                command.Parameters[sCurrentMaxScore].Value = noteScore.currentMaxScore;
-                                command.Parameters[sRank].Value = RankModel.GetRankName(noteScore.rank);
-                                command.Parameters[sPassedNotes].Value = noteScore.passedNotes;
-                                command.Parameters[sHitNotes].Value = noteScore.hitNotes;
-                                command.Parameters[sMissedNotes].Value = noteScore.missedNotes;
-                                command.Parameters[sLastNoteScore].Value = noteScore.lastNoteScore;
-                                command.Parameters[sPassedBombs].Value = noteScore.passedBombs;
-                                command.Parameters[sHitBombs].Value = noteScore.hitBombs;
-                                command.Parameters[sCombo].Value = noteScore.combo;
-                                command.Parameters[sMaxCombo].Value = noteScore.maxCombo;
-                                command.Parameters[sMultiplier].Value = noteScore.multiplier;
-                                command.Parameters[sMultiplierProgress].Value = noteScore.multiplierProgress;
-                                command.Parameters[sBatteryEnergy].Value = noteScore.batteryEnergy;
-                                command.Parameters[sSoftFailed].Value = noteScore.softFailed;
-                                command.Parameters[sNoteID].Value = gameStatus.GetNoteId();
-                                command.Parameters[sNoteType].Value = noteScore.colorType == ColorType.None ? sBomb : noteScore.colorType == ColorType.ColorA ? sNoteA : noteScore.colorType == ColorType.ColorB ? sNoteB : noteScore.colorType.ToString();
-                                command.Parameters[sNoteCutDirection].Value = noteScore.noteCutDirection.ToString();
-                                command.Parameters[sNoteLine].Value = noteScore.noteLine;
-                                command.Parameters[sNoteLayer].Value = (int)noteScore.noteLayer;
-                                command.Parameters[sSpeedOK].Value = noteScore.speedOK;
-                                command.Parameters[sDirectionOK].Value = noteScore.directionOK;
-                                command.Parameters[sSaberTypeOK].Value = noteScore.saberTypeOK;
-                                command.Parameters[sWasCutTooSoon].Value = noteScore.wasCutTooSoon;
-                                command.Parameters[sInitialScore].Value = noteScore.initialScore;
-                                command.Parameters[sBeforeScore].Value = noteScore.initialScore - noteScore.cutDistanceScore;
-                                command.Parameters[sAfterScore].Value = noteScore.finalScore - noteScore.initialScore;
-                                command.Parameters[sCutDistanceScore].Value = noteScore.cutDistanceScore;
-                                command.Parameters[sFinalScore].Value = noteScore.finalScore;
-                                command.Parameters[sCutMultiplier].Value = noteScore.cutMultiplier;
-                                command.Parameters[sSaberSpeed].Value = noteScore.saberSpeed;
-                                command.Parameters[sSaberDirX].Value = noteScore.saberDirX;
-                                command.Parameters[sSaberDirY].Value = noteScore.saberDirY;
-                                command.Parameters[sSaberDirZ].Value = noteScore.saberDirZ;
-                                command.Parameters[sSaberType].Value = noteScore.saberType.ToString();
-                                command.Parameters[sSwingRating].Value = noteScore.swingRating;
-                                command.Parameters[sSwingRatingFullyCut].Value = noteScore.swingRatingFullyCut;
-                                command.Parameters[sTimeDeviation].Value = noteScore.timeDeviation;
-                                command.Parameters[sCutDirectionDeviation].Value = noteScore.cutDirectionDeviation;
-                                command.Parameters[sCutPointX].Value = noteScore.cutPointX;
-                                command.Parameters[sCutPointY].Value = noteScore.cutPointY;
-                                command.Parameters[sCutPointZ].Value = noteScore.cutPointZ;
-                                command.Parameters[sCutNormalX].Value = noteScore.cutNormalX;
-                                command.Parameters[sCutNormalY].Value = noteScore.cutNormalY;
-                                command.Parameters[sCutNormalZ].Value = noteScore.cutNormalZ;
-                                command.Parameters[sCutDistanceToCenter].Value = noteScore.cutDistanceToCenter;
-                                command.Parameters[sTimeToNextBasicNote].Value = noteScore.timeToNextBasicNote;
-                                if (command.ExecuteNonQuery() != 1) {
-                                    Logger.Error("DB NoteScore INSERT Error");
-                                    transaction.Rollback();
-                                    break;
-                                }
+                #region // NoteScoreテーブルINSERT
+                // トランザクションを開始します。
+                try {
+                    using (SQLiteTransaction transaction = this._connection.BeginTransaction())
+                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
+                        command.Transaction = transaction;
+                        command.CommandText = sqlPlayDataAddNoteCut;
+                        command.Parameters.Add(sTime, DbType.Int64);
+                        command.Parameters.Add(sCutTime, DbType.Int64);
+                        command.Parameters.Add(sStartTime, DbType.Int64);
+                        command.Parameters.Add(sEvent, DbType.String);
+                        command.Parameters.Add(sRawScore, DbType.Int32);
+                        command.Parameters.Add(sScore, DbType.Int32);
+                        command.Parameters.Add(sCurrentMaxScore, DbType.Int32);
+                        command.Parameters.Add(sRank, DbType.String);
+                        command.Parameters.Add(sPassedNotes, DbType.Int32);
+                        command.Parameters.Add(sHitNotes, DbType.Int32);
+                        command.Parameters.Add(sMissedNotes, DbType.Int32);
+                        command.Parameters.Add(sLastNoteScore, DbType.Int32);
+                        command.Parameters.Add(sPassedBombs, DbType.Int32);
+                        command.Parameters.Add(sHitBombs, DbType.Int32);
+                        command.Parameters.Add(sCombo, DbType.Int32);
+                        command.Parameters.Add(sMaxCombo, DbType.Int32);
+                        command.Parameters.Add(sMultiplier, DbType.Int32);
+                        command.Parameters.Add(sMultiplierProgress, DbType.Single);
+                        command.Parameters.Add(sBatteryEnergy, DbType.Int32);
+                        command.Parameters.Add(sSoftFailed, DbType.Boolean);
+                        command.Parameters.Add(sNoteID, DbType.Int32);
+                        command.Parameters.Add(sNoteType, DbType.String);
+                        command.Parameters.Add(sNoteCutDirection, DbType.String);
+                        command.Parameters.Add(sNoteLine, DbType.Int32);
+                        command.Parameters.Add(sNoteLayer, DbType.Int32);
+                        command.Parameters.Add(sSpeedOK, DbType.Boolean);
+                        command.Parameters.Add(sDirectionOK, DbType.Boolean);
+                        command.Parameters.Add(sSaberTypeOK, DbType.Boolean);
+                        command.Parameters.Add(sWasCutTooSoon, DbType.Boolean);
+                        command.Parameters.Add(sInitialScore, DbType.Int32);
+                        command.Parameters.Add(sBeforeScore, DbType.Int32);
+                        command.Parameters.Add(sAfterScore, DbType.Int32);
+                        command.Parameters.Add(sCutDistanceScore, DbType.Int32);
+                        command.Parameters.Add(sFinalScore, DbType.Int32);
+                        command.Parameters.Add(sCutMultiplier, DbType.Int32);
+                        command.Parameters.Add(sSaberSpeed, DbType.Single);
+                        command.Parameters.Add(sSaberDirX, DbType.Single);
+                        command.Parameters.Add(sSaberDirY, DbType.Single);
+                        command.Parameters.Add(sSaberDirZ, DbType.Single);
+                        command.Parameters.Add(sSaberType, DbType.String);
+                        command.Parameters.Add(sSwingRating, DbType.Single);
+                        command.Parameters.Add(sSwingRatingFullyCut, DbType.Single);
+                        command.Parameters.Add(sTimeDeviation, DbType.Single);
+                        command.Parameters.Add(sCutDirectionDeviation, DbType.Single);
+                        command.Parameters.Add(sCutPointX, DbType.Single);
+                        command.Parameters.Add(sCutPointY, DbType.Single);
+                        command.Parameters.Add(sCutPointZ, DbType.Single);
+                        command.Parameters.Add(sCutNormalX, DbType.Single);
+                        command.Parameters.Add(sCutNormalY, DbType.Single);
+                        command.Parameters.Add(sCutNormalZ, DbType.Single);
+                        command.Parameters.Add(sCutDistanceToCenter, DbType.Single);
+                        command.Parameters.Add(sTimeToNextBasicNote, DbType.Single);
+                        gameStatus.lastNoteId = 0;
+                        NoteDataEntity noteScore;
+                        for (gameStatus.noteIndex = 0; gameStatus.noteIndex < gameStatus.noteEndIndex; gameStatus.noteIndex++) {
+                            this.databaseInsertTime = Utility.GetCurrentTime();
+                            noteScore = gameStatus.NoteDataGet();
+                            command.Parameters[sTime].Value = noteScore.time;
+                            command.Parameters[sCutTime].Value = noteScore.cutTime;
+                            command.Parameters[sStartTime].Value = gameStatus.startTime;
+                            command.Parameters[sEvent].Value = noteScore.bs_event.GetDescription();
+                            command.Parameters[sRawScore].Value = noteScore.rawScore;
+                            command.Parameters[sScore].Value = noteScore.score;
+                            command.Parameters[sCurrentMaxScore].Value = noteScore.currentMaxScore;
+                            command.Parameters[sRank].Value = RankModel.GetRankName(noteScore.rank);
+                            command.Parameters[sPassedNotes].Value = noteScore.passedNotes;
+                            command.Parameters[sHitNotes].Value = noteScore.hitNotes;
+                            command.Parameters[sMissedNotes].Value = noteScore.missedNotes;
+                            command.Parameters[sLastNoteScore].Value = noteScore.lastNoteScore;
+                            command.Parameters[sPassedBombs].Value = noteScore.passedBombs;
+                            command.Parameters[sHitBombs].Value = noteScore.hitBombs;
+                            command.Parameters[sCombo].Value = noteScore.combo;
+                            command.Parameters[sMaxCombo].Value = noteScore.maxCombo;
+                            command.Parameters[sMultiplier].Value = noteScore.multiplier;
+                            command.Parameters[sMultiplierProgress].Value = noteScore.multiplierProgress;
+                            command.Parameters[sBatteryEnergy].Value = noteScore.batteryEnergy;
+                            command.Parameters[sSoftFailed].Value = noteScore.softFailed;
+                            command.Parameters[sNoteID].Value = gameStatus.GetNoteId();
+                            command.Parameters[sNoteType].Value = noteScore.colorType == ColorType.None ? sBomb : noteScore.colorType == ColorType.ColorA ? sNoteA : noteScore.colorType == ColorType.ColorB ? sNoteB : noteScore.colorType.ToString();
+                            command.Parameters[sNoteCutDirection].Value = noteScore.noteCutDirection.ToString();
+                            command.Parameters[sNoteLine].Value = noteScore.noteLine;
+                            command.Parameters[sNoteLayer].Value = (int)noteScore.noteLayer;
+                            command.Parameters[sSpeedOK].Value = noteScore.speedOK;
+                            command.Parameters[sDirectionOK].Value = noteScore.directionOK;
+                            command.Parameters[sSaberTypeOK].Value = noteScore.saberTypeOK;
+                            command.Parameters[sWasCutTooSoon].Value = noteScore.wasCutTooSoon;
+                            command.Parameters[sInitialScore].Value = noteScore.initialScore;
+                            command.Parameters[sBeforeScore].Value = noteScore.initialScore - noteScore.cutDistanceScore;
+                            command.Parameters[sAfterScore].Value = noteScore.finalScore - noteScore.initialScore;
+                            command.Parameters[sCutDistanceScore].Value = noteScore.cutDistanceScore;
+                            command.Parameters[sFinalScore].Value = noteScore.finalScore;
+                            command.Parameters[sCutMultiplier].Value = noteScore.cutMultiplier;
+                            command.Parameters[sSaberSpeed].Value = noteScore.saberSpeed;
+                            command.Parameters[sSaberDirX].Value = noteScore.saberDirX;
+                            command.Parameters[sSaberDirY].Value = noteScore.saberDirY;
+                            command.Parameters[sSaberDirZ].Value = noteScore.saberDirZ;
+                            command.Parameters[sSaberType].Value = noteScore.saberType.ToString();
+                            command.Parameters[sSwingRating].Value = noteScore.swingRating;
+                            command.Parameters[sSwingRatingFullyCut].Value = noteScore.swingRatingFullyCut;
+                            command.Parameters[sTimeDeviation].Value = noteScore.timeDeviation;
+                            command.Parameters[sCutDirectionDeviation].Value = noteScore.cutDirectionDeviation;
+                            command.Parameters[sCutPointX].Value = noteScore.cutPointX;
+                            command.Parameters[sCutPointY].Value = noteScore.cutPointY;
+                            command.Parameters[sCutPointZ].Value = noteScore.cutPointZ;
+                            command.Parameters[sCutNormalX].Value = noteScore.cutNormalX;
+                            command.Parameters[sCutNormalY].Value = noteScore.cutNormalY;
+                            command.Parameters[sCutNormalZ].Value = noteScore.cutNormalZ;
+                            command.Parameters[sCutDistanceToCenter].Value = noteScore.cutDistanceToCenter;
+                            command.Parameters[sTimeToNextBasicNote].Value = noteScore.timeToNextBasicNote;
+                            if (command.ExecuteNonQuery() != 1) {
+                                Logger.Error("DB NoteScore INSERT Error");
+                                transaction.Rollback();
+                                break;
                             }
-                            transaction.Commit();
                         }
-                        catch (Exception e) {
-                            Logger.Error("DB NoteScore INSERT Error:" + e.Message);
-                            transaction.Rollback();
-                        }
-                        #endregion
-                        #region // EnergyChangeテーブルINSERT
-                        try {
-                            command.Reset();
-                            command.CommandText = sqlPlayDataAddEnergy;
-                            command.Parameters.Add(sTime, DbType.Int64);
-                            command.Parameters.Add(sEnergy, DbType.Single);
-                            long beforeTime = 0;
-                            EnergyDataEntity energyData;
-                            for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
-                                this.databaseInsertTime = Utility.GetCurrentTime();
-                                energyData = gameStatus.EnergyDataGet();
-                                if (beforeTime == energyData.time) energyData.time += 1;
-                                beforeTime = energyData.time;
-                                command.Parameters[sTime].Value = energyData.time;
-                                command.Parameters[sEnergy].Value = energyData.energy;
-                                if (command.ExecuteNonQuery() != 1) {
-                                    Logger.Error("DB EnergyChange INSERT Error");
-                                    transaction.Rollback();
-                                    break;
-                                }
-                            }
-                            transaction.Commit();
-                        }
-                        catch (Exception e) {
-                            Logger.Error("DB EnergyChange INSERT Error:" + e.Message);
-                            transaction.Rollback();
-                        }
-                        #endregion
+                        transaction.Commit();
                     }
                 }
+                catch (Exception e) {
+                    Logger.Error("DB NoteScore INSERT Error:" + e.Message);
+                }
+                #endregion
+                #region // EnergyChangeテーブルINSERT
+                try {
+                    using (SQLiteTransaction transaction = this._connection.BeginTransaction())
+                    using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
+                        command.Transaction = transaction;
+                        command.CommandText = sqlPlayDataAddEnergy;
+                        command.Parameters.Add(sTime, DbType.Int64);
+                        command.Parameters.Add(sEnergy, DbType.Single);
+                        long beforeTime = 0;
+                        EnergyDataEntity energyData;
+                        for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
+                            this.databaseInsertTime = Utility.GetCurrentTime();
+                            energyData = gameStatus.EnergyDataGet();
+                            if (beforeTime == energyData.time) energyData.time += 1;
+                            beforeTime = energyData.time;
+                            command.Parameters[sTime].Value = energyData.time;
+                            command.Parameters[sEnergy].Value = energyData.energy;
+                            if (command.ExecuteNonQuery() != 1) {
+                                Logger.Error("DB EnergyChange INSERT Error");
+                                transaction.Rollback();
+                                break;
+                            }
+                        }
+                        transaction.Commit();
+                    }
+                }
+                catch (Exception e) {
+                    Logger.Error("DB EnergyChange INSERT Error:" + e.Message);
+                }
+                #endregion
             }
             this._gameStatus.ResetGameStatus();
             this.playDataAddFlag = false;
