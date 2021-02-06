@@ -21,17 +21,6 @@ namespace DataRecorder.Util
         }
 
         /// <summary>
-        /// NoteID生成用、譜面データとノーツカットデータの照合
-        /// </summary>
-        /// <param name="a">比較対象A</param>
-        /// <param name="b">比較対象B</param>
-        /// <returns>一致すればTrue、非一致はFalse</returns>
-        public static bool NoteDataEquals(NoteData a, NoteData b)
-        {
-            return a.time == b.time && a.lineIndex == b.lineIndex && a.noteLineLayer == b.noteLineLayer && a.colorType == b.colorType && a.cutDirection == b.cutDirection && a.duration == b.duration;
-        }
-
-        /// <summary>
         /// プラグインのバージョン取得
         /// </summary>
         /// <returns>バージョン文字列:0.0.0</returns>

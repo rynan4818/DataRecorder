@@ -683,7 +683,7 @@ namespace DataRecorder.Models
             int noteID = -1;
             // Check the near notes first for performance
             for (int i = Math.Max(0, this.lastNoteId - 10); i < this.mapDatas.Length; i++) {
-                if (NoteDataEquals(this.mapDatas[i], this.noteScores[noteIndex], this.modNoArrows)) {
+                if (NoteDataEquals(this.mapDatas[i])) {
                     noteID = i;
                     if (i > this.lastNoteId) this.lastNoteId = i;
                     break;
@@ -692,7 +692,7 @@ namespace DataRecorder.Models
             // If that failed, check the rest of the notes in reverse order
             if (noteID == -1) {
                 for (int i = Math.Max(0, this.lastNoteId - 11); i >= 0; i--) {
-                    if (NoteDataEquals(this.mapDatas[i], this.noteScores[noteIndex], this.modNoArrows)) {
+                    if (NoteDataEquals(this.mapDatas[i])) {
                         noteID = i;
                         break;
                     }
@@ -836,11 +836,16 @@ namespace DataRecorder.Models
         }
 
         /// <summary>
-        /// 譜面データとノーツデータを比較(noteID取得用)
+        /// 譜面データと現在のインデックスのノーツデータを比較(noteID取得用)
         /// </summary>
-        private static bool NoteDataEquals(MapDataEntity a, NoteDataEntity b, bool noArrows = false)
+        private bool NoteDataEquals(MapDataEntity a)
         {
-            return a.time == b.noteTime && a.lineIndex == b.noteLine && a.noteLineLayer == b.noteLayer && a.colorType == b.colorType && (noArrows || a.cutDirection == b.noteCutDirection) && a.duration == b.duration;
+            return a.time == this.noteScores[noteIndex].noteTime &&
+                a.lineIndex == this.noteScores[noteIndex].noteLine &&
+                a.noteLineLayer == this.noteScores[noteIndex].noteLayer &&
+                a.colorType == this.noteScores[noteIndex].colorType &&
+                (this.modNoArrows || a.cutDirection == this.noteScores[noteIndex].noteCutDirection) &&
+                a.duration == this.noteScores[noteIndex].duration;
         }
         #endregion
     }
