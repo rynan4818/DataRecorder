@@ -16,11 +16,14 @@ namespace DataRecorder.Configuration
         /// <summary>
         /// デフォルトのデータベースファイルパスです。
         /// </summary>
-        public static readonly string DataBaseFilePath = Path.Combine(IPA.Utilities.UnityGame.UserDataPath, "DataRecorder", "beatsaber.db");
+        public static readonly string DefaultDBFilePath = Path.Combine(IPA.Utilities.UnityGame.UserDataPath, "DataRecorder", "beatsaber.db");
 
-        // TODO : 必要な設定項目の追加
         public static PluginConfig Instance { get; set; }
-        public virtual string DBFile { get; set; } = DataBaseFilePath;
+
+        /// <summary>
+        /// データベースのファイルパス
+        /// </summary>
+        public virtual string DBFilePath { get; set; } = DefaultDBFilePath;
 
         /// <summary>
         /// This is called whenever BSIPA reads the config from disk (including when file changes are detected).

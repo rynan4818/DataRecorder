@@ -30,26 +30,6 @@ namespace DataRecorder.Models
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // パブリックメソッド
-
-        //public void OnMultiplayerStateChanged(MultiplayerController.State state)
-        //{
-        //	Logger.Info("multiplayer state = " + state);
-
-        //	if (state == MultiplayerController.State.Intro) {
-        //		// Gameplay controllers don't exist on the inisial load of GameCore, s owe need to delay it until later
-        //		// XXX: check that this isn't fired too late
-        //		//HandleSongStart();
-        //	}
-        //}
-
-        //public void OnMultiplayerDisconnected(DisconnectedReason reason)
-        //{
-        //	CleanUpMultiplayer();
-
-        //	// XXX: this should only be fired if we go from multiplayer lobby to menu and there's no scene transition because of it. gotta prevent duplicates too
-        //	// HandleMenuStart();
-        //}
-
         /// <summary>
         /// Pauseイベント発生時
         /// </summary>
@@ -592,7 +572,6 @@ namespace DataRecorder.Models
                     // TODO: マネージド状態を破棄します (マネージド オブジェクト)
 
                     //各種イベントの削除
-                    Logger.Debug("dispose call");
                     try {
                         this._repository.playDataAddFlag = true;
 
@@ -637,6 +616,7 @@ namespace DataRecorder.Models
                     catch (Exception e) {
                         Logger.Error(e);
                     }
+                    Logger.Debug("dispose end");
                 }
 
                 // TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします

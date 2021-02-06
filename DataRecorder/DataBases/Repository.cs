@@ -30,7 +30,7 @@ namespace DataRecorder.DataBases
         public bool playDataAddFlag { get; set; } = false;
 
         /// <summary>
-        /// pause , resume イベント書き込みフラグ
+        /// pause , resume イベントのデータベース書き込みフラグ
         /// </summary>
         public BeatSaberEvent? pauseEventAddFlag { get; set; } = null;
         #endregion
@@ -41,7 +41,8 @@ namespace DataRecorder.DataBases
         /// </summary>
         private const int databaseTimeout = 10000;
 
-        // データベースパラメータ用文字列
+        /// データベースパラメータ用文字列
+        // Game
         private const string sTime = "time";
         private const string sEvent = "event";
         private const string sEndTime = "endTime";
@@ -150,14 +151,13 @@ namespace DataRecorder.DataBases
         private const string sTimeToNextBasicNote = "timeToNextBasicNote";
         private const string sEnergy = "energy";
 
-        // データベース書き込み用
+        /// データベース書き込み用文字列
         private const string sBomb = "Bomb";
         private const string sNoteA = "NoteA";
         private const string sNoteB = "NoteB";
 
-        ///
         ///データベースSQL文
-        ///
+
         // pause , resume イベント記録
         private const string sqlPauseEventAdd = "INSERT INTO MovieCutPause(time, event) VALUES (@time, @event)";
         // プレイデータの記録 BeatMap情報
@@ -421,22 +421,6 @@ namespace DataRecorder.DataBases
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // パブリックメソッド
         /// <summary>
-        /// 初期化処理
-        /// </summary>
-        public void Initialize()
-        {
-            if (!File.Exists(PluginConfig.Instance.DBFile)) {
-                if (!Directory.Exists(Path.GetDirectoryName(PluginConfig.DataBaseFilePath))) {
-                    Directory.CreateDirectory(Path.GetDirectoryName(PluginConfig.DataBaseFilePath));
-                }
-                PluginConfig.Instance.DBFile = PluginConfig.DataBaseFilePath;
-            }
-            this.CreateTable();
-            this.thread = new Thread(new ThreadStart(this.DbInsertEvent));
-            this.thread.Start();
-        }
-
-        /// <summary>
         /// データベースのタイムアウト処理
         /// </summary>
         public void DbTimeoutCheck()
@@ -471,9 +455,8 @@ namespace DataRecorder.DataBases
         /// </summary>
         private void PauseEventAdd(BeatSaberEvent? bs_event)
         {
-            Logger.Debug("PauseEventAdd call");
             this.databaseInsertTime = Utility.GetCurrentTime();
-            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
+            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFilePath};Version=3;")) {
                 this._connection.Open();
                 try {
                     using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
@@ -482,10 +465,7 @@ namespace DataRecorder.DataBases
                         command.Parameters[sTime].Value = Utility.GetCurrentTime();
                         command.Parameters.Add(sEvent, System.Data.DbType.String);
                         command.Parameters[sEvent].Value = bs_event.GetDescription();
-                        var result = command.ExecuteNonQuery();
-                        // データ更新できない場合
-                        if (result != 1)
-                            Logger.Error("DB NoteScore MovieCutPause Error");
+                        if (command.ExecuteNonQuery() != 1) Logger.Error("DB MovieCutPause Error");
                     }
                 }
                 catch (Exception e) {
@@ -494,6 +474,7 @@ namespace DataRecorder.DataBases
             }
             this.databaseInsertTime = null;
             this.pauseEventAddFlag = null;
+            Logger.Debug("PauseEventAdd");
         }
 
         /// <summary>
@@ -501,12 +482,11 @@ namespace DataRecorder.DataBases
         /// </summary>
         private void PlayDataAdd()
         {
-            int result;
+            Logger.Debug("PlayDataAdd call");
             var gameStatus = this._gameStatus;
             long addStartTime = Utility.GetCurrentTime();
-            Logger.Debug("PlayDataAdd call");
             this.databaseInsertTime = Utility.GetCurrentTime();
-            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
+            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFilePath};Version=3;")) {
                 this._connection.Open();
                 using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
                     try {
@@ -516,9 +496,7 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(sStartTime, DbType.Int64);
                         command.Parameters[sStartTime].Value = gameStatus.startTime;
                         command.Parameters.Add(sEndTime, DbType.Int64);
-                        if (gameStatus.endTime == 0)
-                            gameStatus.endTime = Utility.GetCurrentTime();
-                        command.Parameters[sEndTime].Value = gameStatus.endTime;
+                        command.Parameters[sEndTime].Value = gameStatus.endTime == 0 ? Utility.GetCurrentTime() : gameStatus.endTime;
                         command.Parameters.Add(sMenuTime, DbType.Int64);
                         command.Parameters[sMenuTime].Value = Utility.GetCurrentTime();
                         command.Parameters.Add(sCleared, DbType.String);
@@ -558,11 +536,11 @@ namespace DataRecorder.DataBases
                         command.Parameters.Add(sSongTimeOffset, DbType.Int64);
                         command.Parameters[sSongTimeOffset].Value = gameStatus.songTimeOffset;
                         command.Parameters.Add(sStart, DbType.Int64);
-                        command.Parameters.Add(sPaused, DbType.Int64);
-                        if (gameStatus.start == 0)
+                        if (gameStatus.start == 0) 
                             command.Parameters[sStart].Value = null;
                         else
                             command.Parameters[sStart].Value = gameStatus.start;
+                        command.Parameters.Add(sPaused, DbType.Int64);
                         if (gameStatus.paused == 0)
                             command.Parameters[sPaused].Value = null;
                         else
@@ -581,13 +559,8 @@ namespace DataRecorder.DataBases
                         command.Parameters[sMaxRank].Value = gameStatus.maxRank.ToString();
                         command.Parameters.Add(sEnvironmentName, DbType.String);
                         command.Parameters[sEnvironmentName].Value = gameStatus.environmentName;
-                        double scorePercentage;
-                        if (gameStatus.currentMaxScore == 0)
-                            scorePercentage = 0.0;
-                        else
-                            scorePercentage = double.Parse(String.Format("{0:F2}", ((double)gameStatus.score / (double)gameStatus.currentMaxScore) * 100.0));
                         command.Parameters.Add(sScorePercentage, DbType.Double);
-                        command.Parameters[sScorePercentage].Value = scorePercentage;
+                        command.Parameters[sScorePercentage].Value = gameStatus.currentMaxScore == 0 ? 0.0 : double.Parse(String.Format("{0:F2}", ((double)gameStatus.score / (double)gameStatus.currentMaxScore) * 100.0));
                         //performanceステータス
                         command.Parameters.Add(sRawScore, DbType.Int32);
                         command.Parameters[sRawScore].Value = gameStatus.rawScore;
@@ -670,19 +643,18 @@ namespace DataRecorder.DataBases
                         command.Parameters[sAdvancedHUD].Value = gameStatus.advancedHUD;
                         command.Parameters.Add(sAutoRestart, DbType.Boolean);
                         command.Parameters[sAutoRestart].Value = gameStatus.autoRestart;
-                        result = command.ExecuteNonQuery();
-                        if (result != 1)
-                            Logger.Error("DB MovieCutRecord Error");
+                        if (command.ExecuteNonQuery() != 1) Logger.Error("DB MovieCutRecord Error");
                     }
                     catch (Exception e) {
                         Logger.Error("DB MovieCutRecord Error:" + e.Message);
                     }
                     #endregion
 
-                    #region // NoteScore
+                    #region // NoteScoreテーブルINSERT
                     // トランザクションを開始します。
                     using (SQLiteTransaction transaction = this._connection.BeginTransaction()) {
                         try {
+                            command.Reset();
                             command.CommandText = sqlPlayDataAddNoteCut;
                             command.Parameters.Add(sTime, DbType.Int64);
                             command.Parameters.Add(sCutTime, DbType.Int64);
@@ -793,19 +765,22 @@ namespace DataRecorder.DataBases
                                 command.Parameters[sCutNormalZ].Value = noteScore.cutNormalZ;
                                 command.Parameters[sCutDistanceToCenter].Value = noteScore.cutDistanceToCenter;
                                 command.Parameters[sTimeToNextBasicNote].Value = noteScore.timeToNextBasicNote;
-                                result = command.ExecuteNonQuery();
-                                if (result != 1) {
+                                if (command.ExecuteNonQuery() != 1) {
                                     Logger.Error("DB NoteScore INSERT Error");
                                     transaction.Rollback();
                                     break;
                                 }
                             }
+                            transaction.Commit();
                         }
                         catch (Exception e) {
                             Logger.Error("DB NoteScore INSERT Error:" + e.Message);
                             transaction.Rollback();
                         }
+                        #endregion
+                        #region // EnergyChangeテーブルINSERT
                         try {
+                            command.Reset();
                             command.CommandText = sqlPlayDataAddEnergy;
                             command.Parameters.Add(sTime, DbType.Int64);
                             command.Parameters.Add(sEnergy, DbType.Single);
@@ -814,13 +789,11 @@ namespace DataRecorder.DataBases
                             for (gameStatus.energyIndex = 0; gameStatus.energyIndex < gameStatus.energyEndIndex; gameStatus.energyIndex++) {
                                 this.databaseInsertTime = Utility.GetCurrentTime();
                                 energyData = gameStatus.EnergyDataGet();
-                                if (beforeTime == energyData.time)
-                                    energyData.time += 1;
+                                if (beforeTime == energyData.time) energyData.time += 1;
                                 beforeTime = energyData.time;
                                 command.Parameters[sTime].Value = energyData.time;
                                 command.Parameters[sEnergy].Value = energyData.energy;
-                                result = command.ExecuteNonQuery();
-                                if (result != 1) {
+                                if (command.ExecuteNonQuery() != 1) {
                                     Logger.Error("DB EnergyChange INSERT Error");
                                     transaction.Rollback();
                                     break;
@@ -847,7 +820,7 @@ namespace DataRecorder.DataBases
         /// </summary>
         private void CreateTable()
         {
-            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFile};Version=3;")) {
+            using (this._connection = new SQLiteConnection($"Data Source={PluginConfig.Instance.DBFilePath};Version=3;")) {
                 this._connection.Open();
                 try {
                     using (SQLiteCommand command = new SQLiteCommand(this._connection)) {
@@ -995,14 +968,16 @@ namespace DataRecorder.DataBases
                             );
                         ";
                         command.ExecuteNonQuery();
+                        // HTTPStatus+DB v2020/04/12以前の作成DB対応
                         DbColumnCheck(command, "MovieCutRecord", "levelId", "TEXT");
+                        DbColumnCheck(command, "NoteScore", "beforeScore", "INTEGER");
+                        // DataRecorder v0.3.0以前の作成DB対応
                         DbColumnCheck(command, "MovieCutRecord", "rawScore", "INTEGER");
                         DbColumnCheck(command, "MovieCutRecord", "comboMultiplier", "INTEGER");
                         DbColumnCheck(command, "MovieCutRecord", "multiplierProgress", "REAL");
                         DbColumnCheck(command, "MovieCutRecord", "batteryEnergyLevel", "INTEGER");
                         DbColumnCheck(command, "MovieCutRecord", "energy", "REAL");
                         DbColumnCheck(command, "MovieCutRecord", "softFailed", "INTEGER");
-                        DbColumnCheck(command, "NoteScore", "beforeScore", "INTEGER");
                         DbColumnCheck(command, "NoteScore", "rawScore", "INTEGER");
                         DbColumnCheck(command, "NoteScore", "softFailed", "INTEGER");
                     }
@@ -1040,10 +1015,11 @@ namespace DataRecorder.DataBases
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // メンバ変数
+        private bool disposedValue;
         private SQLiteConnection _connection;
         private Thread thread;
         /// <summary>
-        /// データベースの最終INSERT発行時間(通常時はnull)
+        /// データベースの最終INSERT発行時間(書き込み完了後はnull)
         /// </summary>
         private long? databaseInsertTime = null;
 
@@ -1053,12 +1029,26 @@ namespace DataRecorder.DataBases
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // 構築・破棄
-        public Repository()
+        /// <summary>
+        /// 初期化処理
+        /// </summary>
+        public void Initialize()
         {
+            if (!File.Exists(PluginConfig.Instance.DBFilePath)) {
+                if (!Directory.Exists(Path.GetDirectoryName(PluginConfig.DefaultDBFilePath))) {
+                    Directory.CreateDirectory(Path.GetDirectoryName(PluginConfig.DefaultDBFilePath));
+                }
+                PluginConfig.Instance.DBFilePath = PluginConfig.DefaultDBFilePath;
+            }
+            this.CreateTable();
+            this.thread = new Thread(new ThreadStart(this.DbInsertEvent));
+            this.thread.Start();
         }
 
-        private bool disposedValue;
-
+        /// <summary>
+        /// 終了時処理
+        /// </summary>
+        /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue) {
