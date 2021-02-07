@@ -4,6 +4,7 @@ using DataRecorder.Enums;
 using BS_Utils.Gameplay;
 using IPA.Utilities;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,7 +52,6 @@ namespace DataRecorder.Models
         /// </summary>
         public void OnGameResume()
         {
-            this._gameStatus.start = Utility.GetCurrentTime() - (long)(audioTimeSyncController.songTime * 1000f / this._gameStatus.songSpeedMultiplier);
             this._gameStatus.paused = 0;
             while (this._repository.pauseEventAddFlag != null) {
                 Thread.Sleep(1);
@@ -360,6 +360,21 @@ namespace DataRecorder.Models
             gameStatus.rank = RankModel.GetRankForScore(gameStatus.rawScore, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
         }
 
+        /// <summary>
+        /// 曲スタートまでstart更新を待機
+        /// </summary>
+        /// <returns></returns>
+        private IEnumerator SongStartWait()
+        {
+            float songTime = this.audioTimeSyncController.songTime;
+            yield return new WaitWhile(() => this.audioTimeSyncController.songTime > songTime);
+            PracticeSettings practiceSettings = gameplayCoreSceneSetupData.practiceSettings;
+            float songSpeedMul = gameplayCoreSceneSetupData.gameplayModifiers.songSpeedMul;
+            this._gameStatus.start = Utility.GetCurrentTime() - (long)(this.audioTimeSyncController.songTime * 1000f / songSpeedMul);
+            if (practiceSettings != null) this._gameStatus.start -= (long)(practiceSettings.startSongTime * 1000f / songSpeedMul);
+            Logger.Debug("Song Start");
+        }
+
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // メンバ変数
@@ -371,7 +386,6 @@ namespace DataRecorder.Models
         private ScoreController scoreController;
         private GameplayModifiers gameplayModifiers;
         private AudioTimeSyncController audioTimeSyncController;
-        private GameSongController gameSongController;
         private GameEnergyCounter gameEnergyCounter;
         private MultiplayerLocalActivePlayerFacade multiplayerLocalActivePlayerFacade;
         private ILevelEndActions levelEndActions;
@@ -407,7 +421,6 @@ namespace DataRecorder.Models
                 this.scoreController = container.Resolve<ScoreController>();
                 this.gameplayModifiers = container.Resolve<GameplayModifiers>();
                 this.audioTimeSyncController = container.Resolve<AudioTimeSyncController>();
-                this.gameSongController = container.Resolve<GameSongController>();
                 this.gameEnergyCounter = container.Resolve<GameEnergyCounter>();
                 this.gameplayModifiersSO = this.scoreController.GetField<GameplayModifiersModelSO, ScoreController>("_gameplayModifiersModel");
             }
@@ -460,8 +473,6 @@ namespace DataRecorder.Models
             this.scoreController.comboDidChangeEvent += this.OnComboDidChange;
             // public ScoreController#multiplierDidChangeEvent<int, float> // multiplier, progress [0..1]
             this.scoreController.multiplierDidChangeEvent += this.OnMultiplierDidChange;
-            // public event Action GameSongController#songDidFinishEvent;
-            this.gameSongController.songDidFinishEvent += this.OnLevelFinished;
             // public event Action GameEnergyCounter#gameEnergyDidReach0Event;
             this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnEnergyDidReach0Event;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
@@ -472,7 +483,7 @@ namespace DataRecorder.Models
                 this._gameStatus.multiplayer = true;
             }
             if (this.levelEndActions != null) {
-                this.levelEndActions.levelFailedEvent += this.OnLevelFinished;
+                this.levelEndActions.levelFinishedEvent += this.OnLevelFinished;
                 this.levelEndActions.levelFailedEvent += this.OnLevelFailed;
             }
             //BeatMapデータの登録
@@ -517,8 +528,6 @@ namespace DataRecorder.Models
             this._gameStatus.levelId = level.levelID;
             this._gameStatus.songTimeOffset = (long)(level.songTimeOffset * 1000f / songSpeedMul);
             this._gameStatus.length = (long)(level.beatmapLevelData.audioClip.length * 1000f / songSpeedMul);
-            this._gameStatus.start = Utility.GetCurrentTime() - (long)(audioTimeSyncController.songTime * 1000f / songSpeedMul);
-            if (practiceSettings != null) this._gameStatus.start -= (long)(practiceSettings.startSongTime * 1000f / songSpeedMul);
             this._gameStatus.paused = 0;
             this._gameStatus.difficulty = diff.difficulty.Name();
             this._gameStatus.notesCount = diff.beatmapData.cuttableNotesType;
@@ -557,6 +566,7 @@ namespace DataRecorder.Models
             this._gameStatus.NoteDataSizeCheck();
             this._gameStatus.EnergyDataSizeCheck();
             this._gameStatus.MapDataSizeCheck();
+            HMMainThreadDispatcher.instance.Enqueue(this.SongStartWait());
             Logger.Debug("Initialize end");
         }
 
@@ -606,10 +616,6 @@ namespace DataRecorder.Models
                         if (this.gameEnergyCounter != null) {
                             this.gameEnergyCounter.gameEnergyDidChangeEvent -= this.OnEnergyDidChange;
                             this.gameEnergyCounter.gameEnergyDidReach0Event -= this.OnEnergyDidReach0Event;
-                        }
-
-                        if (this.gameSongController != null) {
-                            this.gameSongController.songDidFinishEvent -= this.OnLevelFinished;
                         }
 
                     }
