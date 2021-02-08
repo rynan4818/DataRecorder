@@ -30,7 +30,7 @@ BeatSaber1.13.0までは[Beat Saber HTTP Status +Database](https://github.com/ry
 modのインストールが完了した状態でBeatSaberをプレイすると`UserData\DataRecorder\beatsaber.db`ファイルが作成され、プレイ情報を記録します。
 プレイ動画カットツール（[BS Movie Cut](https://github.com/rynan4818/bs-movie-cut)）で、記録したデータベースを設定して、録画したプレイ動画のカット編集などが自動で可能です。
 # 設定
-`UserData`フォルダに`DataRecorder.json`ファイルが作成されます。`DBFile`の項目にデーターベースファイルの保存パスが設定されます。標準とは異なる場所にデーターベースを保存する場合は手動で変更して下さい。将来的にはBS Movie Cutの設定画面で変更可能にする予定です。
+`UserData`フォルダに`DataRecorder.json`ファイルが作成されます。`DBFilePath`の項目にデーターベースファイルの保存パスが設定されます。標準とは異なる場所にデーターベースを保存する場合は手動で変更して下さい。将来的にはBS Movie Cutの設定画面で変更可能にする予定です。
 # 謝辞
 本modツールの作成にあたり[デンパ時計さん](https://github.com/denpadokei)にmod作成の土台に当たる部分を作って頂きました。
 新規のmod作成は始めてでしたので、大変助かり勉強になりました。心から感謝いたします。
