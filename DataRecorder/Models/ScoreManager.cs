@@ -608,7 +608,7 @@ namespace DataRecorder.Models
                         }
 
                         if (this.levelEndActions != null) {
-                            this.levelEndActions.levelFailedEvent -= this.OnLevelFinished;
+                            this.levelEndActions.levelFinishedEvent -= this.OnLevelFinished;
                             this.levelEndActions.levelFailedEvent -= this.OnLevelFailed;
                         }
                         //CleanUpMultiplayer();
