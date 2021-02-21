@@ -9,6 +9,7 @@ BeatSaber1.13.0までは[Beat Saber HTTP Status +Database](https://github.com/ry
 - [DataPuller](https://github.com/kOFReadie/BSDataPuller)
 
 ※HTTP Statusと、DataPullerは互換性は無いのでそれぞれ専用のオーバーレイが必要です
+- HTTP Status用オーバーレイ [Beat Saber Overlay 改良版](https://github.com/rynan4818/beat-saber-overlay)
 
 # インストール方法
 
