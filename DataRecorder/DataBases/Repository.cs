@@ -4,13 +4,9 @@ using DataRecorder.Configuration;
 using DataRecorder.Interfaces;
 using DataRecorder.Enums;
 using System;
-using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Data;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Zenject;
 using System.Threading;
 
@@ -114,6 +110,12 @@ namespace DataRecorder.DataBases
         private const string sNoHUD = "noHUD";
         private const string sAdvancedHUD = "advancedHUD";
         private const string sAutoRestart = "autoRestart";
+        private const string sSmallNotes = "smallNotes";
+        private const string sProMode = "proMode";
+        private const string sZenMode = "zenMode";
+        private const string sSaberTrailIntensity = "saberTrailIntensity";
+        private const string sEnvironmentEffects = "environmentEffects";
+        private const string sHideNoteSpawningEffect = "hideNoteSpawningEffect";
         // NoteCut
         private const string sCutTime = "cutTime";
         private const string sStartTime = "startTime";
@@ -224,13 +226,19 @@ namespace DataRecorder.DataBases
                                 failOnSaberClash,
                                 strictAngles,
                                 fastNotes,
+                                smallNotes,
+                                proMode,
+                                zenMode,
                                 staticLights,
                                 leftHanded,
                                 playerHeight,
                                 reduceDebris,
                                 noHUD,
                                 advancedHUD,
-                                autoRestart
+                                autoRestart,
+                                saberTrailIntensity,
+                                environmentEffects,
+                                hideNoteSpawningEffect
                             ) VALUES (
                                 @startTime,
                                 @endTime,
@@ -293,13 +301,19 @@ namespace DataRecorder.DataBases
                                 @failOnSaberClash,
                                 @strictAngles,
                                 @fastNotes,
+                                @smallNotes,
+                                @proMode,
+                                @zenMode,
                                 @staticLights,
                                 @leftHanded,
                                 @playerHeight,
                                 @reduceDebris,
                                 @noHUD,
                                 @advancedHUD,
-                                @autoRestart
+                                @autoRestart,
+                                @saberTrailIntensity,
+                                @environmentEffects,
+                                @hideNoteSpawningEffect
                             )
         ";
         // プレイデータの記録 NoteCut情報
@@ -628,6 +642,12 @@ namespace DataRecorder.DataBases
                         command.Parameters[sStrictAngles].Value = gameStatus.modStrictAngles;
                         command.Parameters.Add(sFastNotes, DbType.Boolean);
                         command.Parameters[sFastNotes].Value = gameStatus.modFastNotes;
+                        command.Parameters.Add(sSmallNotes, DbType.Boolean);
+                        command.Parameters[sSmallNotes].Value = gameStatus.modSmallNotes;
+                        command.Parameters.Add(sProMode, DbType.Boolean);
+                        command.Parameters[sProMode].Value = gameStatus.modProMode;
+                        command.Parameters.Add(sZenMode, DbType.Boolean);
+                        command.Parameters[sZenMode].Value = gameStatus.modZenMode;
                         //playerSettingsステータス
                         command.Parameters.Add(sStaticLights, DbType.Boolean);
                         command.Parameters[sStaticLights].Value = gameStatus.staticLights;
@@ -643,6 +663,12 @@ namespace DataRecorder.DataBases
                         command.Parameters[sAdvancedHUD].Value = gameStatus.advancedHUD;
                         command.Parameters.Add(sAutoRestart, DbType.Boolean);
                         command.Parameters[sAutoRestart].Value = gameStatus.autoRestart;
+                        command.Parameters.Add(sSaberTrailIntensity, DbType.Single);
+                        command.Parameters[sSaberTrailIntensity].Value = gameStatus.saberTrailIntensity;
+                        command.Parameters.Add(sEnvironmentEffects, DbType.String);
+                        command.Parameters[sEnvironmentEffects].Value = gameStatus.environmentEffects.ToString();
+                        command.Parameters.Add(sHideNoteSpawningEffect, DbType.Boolean);
+                        command.Parameters[sHideNoteSpawningEffect].Value = gameStatus.hideNoteSpawningEffect;
                         if (command.ExecuteNonQuery() != 1) Logger.Error("DB MovieCutRecord Error");
                     }
                 }
@@ -889,13 +915,19 @@ namespace DataRecorder.DataBases
                                 failOnSaberClash INTEGER,
                                 strictAngles INTEGER,
                                 fastNotes INTEGER,
+                                smallNotes INTEGER,
+                                proMode INTEGER,
+                                zenMode INTEGER,
                                 staticLights INTEGER,
                                 leftHanded INTEGER,
                                 playerHeight REAL,
                                 reduceDebris INTEGER,
                                 noHUD INTEGER,
                                 advancedHUD INTEGER,
-                                autoRestart INTEGER
+                                autoRestart INTEGER,
+                                saberTrailIntensity REAL,
+                                environmentEffects TEXT,
+                                hideNoteSpawningEffect INTEGER
                             );
                         ";
                         command.ExecuteNonQuery();
@@ -982,6 +1014,13 @@ namespace DataRecorder.DataBases
                         DbColumnCheck(command, "MovieCutRecord", "softFailed", "INTEGER");
                         DbColumnCheck(command, "NoteScore", "rawScore", "INTEGER");
                         DbColumnCheck(command, "NoteScore", "softFailed", "INTEGER");
+                        // BeatSaber v1.13.4で追加されたModとPlayerSetting
+                        DbColumnCheck(command, "MovieCutRecord", "smallNotes", "INTEGER");
+                        DbColumnCheck(command, "MovieCutRecord", "proMode", "INTEGER");
+                        DbColumnCheck(command, "MovieCutRecord", "zenMode", "INTEGER");
+                        DbColumnCheck(command, "MovieCutRecord", "saberTrailIntensity", "REAL");
+                        DbColumnCheck(command, "MovieCutRecord", "environmentEffects", "TEXT");
+                        DbColumnCheck(command, "MovieCutRecord", "hideNoteSpawningEffect", "INTEGER");
                     }
                 }
                 catch (Exception e) {

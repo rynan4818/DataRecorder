@@ -339,7 +339,7 @@ namespace DataRecorder.Models
         public bool modFailOnSaberClash { get; set; } = false;
 
         /// <summary>
-        /// StatusObject[Mods] 厳密な角度(Hidden)
+        /// StatusObject[Mods] 厳密な角度[より正確なカット方向が求められ、最大偏差が60度から15度に変更]
         /// </summary>
         public bool modStrictAngles { get; set; } = false;
 
@@ -347,6 +347,21 @@ namespace DataRecorder.Models
         /// StatusObject[Mods] Does something (Hidden)
         /// </summary>
         public bool modFastNotes { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] スモールノーツ
+        /// </summary>
+        public bool modSmallNotes { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] プロモード
+        /// </summary>
+        public bool modProMode { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Mods] 禅モード
+        /// </summary>
+        public bool modZenMode { get; set; } = false;
 
         /// <summary>
         /// StatusObject[Player settings] 静的ライト
@@ -387,6 +402,21 @@ namespace DataRecorder.Models
         /// StatusObject[Player settings] 失敗時に自動リスタート
         /// </summary>
         public bool autoRestart { get; set; } = false;
+
+        /// <summary>
+        /// StatusObject[Player settings] トレイル強度
+        /// </summary>
+        public float saberTrailIntensity { get; set; } = 0.5f;
+
+        /// <summary>
+        /// StatusObject[Player settings] 環境エフェクト
+        /// </summary>
+        public EnvironmentEffectsFilterPreset environmentEffects { get; set; } = EnvironmentEffectsFilterPreset.AllEffects;
+
+        /// <summary>
+        /// StatusObject[Player settings] ノーツのスポーン効果を隠す
+        /// </summary>
+        public bool hideNoteSpawningEffect { get; set; } = false;
         #endregion
         #region // 定数
         /// <summary>
@@ -662,6 +692,9 @@ namespace DataRecorder.Models
             this.modFailOnSaberClash = false;
             this.modStrictAngles = false;
             this.modFastNotes = false;
+            this.modSmallNotes = false;
+            this.modProMode = false;
+            this.modZenMode = false;
             this.staticLights = false;
             this.leftHanded = false;
             this.playerHeight = 1.7f;
@@ -670,6 +703,9 @@ namespace DataRecorder.Models
             this.noHUD = false;
             this.advancedHUD = false;
             this.autoRestart = false;
+            this.saberTrailIntensity = 0.5f;
+            this.environmentEffects = EnvironmentEffectsFilterPreset.AllEffects;
+            this.hideNoteSpawningEffect = false;
             this.ResetNoteCut();
             this.ResetEnergy();
             this.ResetMap();

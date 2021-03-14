@@ -5,12 +5,8 @@ using BS_Utils.Gameplay;
 using IPA.Utilities;
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using Zenject;
 using System.Threading;
@@ -21,7 +17,7 @@ namespace DataRecorder.Models
     /// ゲーム中のスコアを記録するクラスです。
     /// 初期化と破棄はZenjectがいい感じにやってくれます。
     /// </summary>
-    public class ScoreManager : IInitializable, IDisposable
+    public class ScoreManager : IInitializable, IDisposable, ICutScoreBufferDidFinishEvent
     {
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // プロパティ
@@ -66,7 +62,7 @@ namespace DataRecorder.Models
         /// <param name="noteData"></param>
         /// <param name="noteCutInfo"></param>
         /// <param name="multiplier"></param>
-        public void OnNoteWasCut(NoteData noteData, NoteCutInfo noteCutInfo, int multiplier)
+        public void OnNoteWasCut(NoteData noteData, in NoteCutInfo noteCutInfo, int multiplier)
         {
             // Event order: combo, multiplier, scoreController.noteWasCut, (LateUpdate) scoreController.scoreDidChange, afterCut, (LateUpdate) scoreController.scoreDidChange
 
@@ -77,26 +73,25 @@ namespace DataRecorder.Models
                 gameStatus.passedNotes++;
                 gameStatus.hitNotes++;
 
-                List<CutScoreBuffer> list = (List<CutScoreBuffer>)afterCutScoreBuffersField.GetValue(scoreController);
-                foreach (CutScoreBuffer acsb in list) {
-                    if (noteCutInfoField.GetValue(acsb) == noteCutInfo) {
-                        // public CutScoreBuffer#didFinishEvent<CutScoreBuffer>
-                        noteCutMapping.TryAdd(noteCutInfo, noteData);
-                        noteCutTiming.TryAdd(noteCutInfo, Utility.GetCurrentTime());
-                        acsb.didFinishEvent += OnNoteWasFullyCut;
+                var didFinishReceivers = (LazyCopyHashSet<ISaberSwingRatingCounterDidFinishReceiver>)saberSwingRatingCounterDidFinishReceiversField.GetValue(noteCutInfo.swingRatingCounter);
+                foreach (ISaberSwingRatingCounterDidFinishReceiver receiver in didFinishReceivers.items) {
+                    if (receiver is CutScoreBuffer csb) {
+                        noteCutMapping.Add(csb, new NoteFullyCutData(noteData, noteCutInfo, Utility.GetCurrentTime()));
+
+                        // public ILazyCopyHashSet<ICutScoreBufferDidFinishEvent> CutScoreBuffer#didFinishEvent
+                        csb.didFinishEvent.Add(this);
                         break;
                     }
                 }
                 return;
             }
 
-            SetNoteCutStatus(noteData, noteCutInfo, true);
+            this.SetNoteDataStatus(noteData);
+            this.SetNoteCutStatus(noteCutInfo, true);
 
-            int beforeCutScore = 0;
-            int afterCutScore = 0;
-            int cutDistanceScore = 0;
 
-            ScoreModel.RawScoreWithoutMultiplier(noteCutInfo, out beforeCutScore, out afterCutScore, out cutDistanceScore);
+            // public static void ScoreModel.RawScoreWithoutMultiplier(ISaberSwingRatingCounter saberSwingRatingCounter, float cutDistanceToCenter, out int beforeCutRawScore, out int afterCutRawScore, out int cutDistanceRawScore)
+            ScoreModel.RawScoreWithoutMultiplier(noteCutInfo.swingRatingCounter, noteCutInfo.cutDistanceToCenter, out var beforeCutScore, out _, out var cutDistanceScore);
 
             notescore.initialScore = beforeCutScore + cutDistanceScore;
             notescore.finalScore = -1;
@@ -121,37 +116,29 @@ namespace DataRecorder.Models
         /// <summary>
         /// ノーツの正常カット時の点数計算完了イベント発生時
         /// </summary>
-        /// <param name="acsb"></param>
-        public void OnNoteWasFullyCut(CutScoreBuffer acsb)
+        /// <param name="csb"></param>
+        public void HandleCutScoreBufferDidFinish(CutScoreBuffer csb)
         {
-            int beforeCutScore;
-            int afterCutScore;
-            int cutDistanceScore;
 
-            NoteCutInfo noteCutInfo = (NoteCutInfo)noteCutInfoField.GetValue(acsb);
-
-            if (noteCutMapping.TryRemove(noteCutInfo, out var noteData)) {
-                SetNoteCutStatus(noteData, noteCutInfo, false);
-            }
+            var noteFullyCutData = noteCutMapping[csb];
+            noteCutMapping.Remove(csb);
+            var noteCutInfo = noteFullyCutData.noteCutInfo;
+            SetNoteDataStatus(noteFullyCutData.noteData);
+            SetNoteCutStatus(noteCutInfo, false);
 
             // public static ScoreModel.RawScoreWithoutMultiplier(NoteCutInfo, out int beforeCutRawScore, out int afterCutRawScore, out int cutDistanceRawScore)
-            ScoreModel.RawScoreWithoutMultiplier(noteCutInfo, out beforeCutScore, out afterCutScore, out cutDistanceScore);
-
-            int multiplier = (int)cutScoreBufferMultiplierField.GetValue(acsb);
+            ScoreModel.RawScoreWithoutMultiplier(noteCutInfo.swingRatingCounter, noteCutInfo.cutDistanceToCenter, out var beforeCutScore, out var afterCutScore, out var cutDistanceScore);
 
             var notescore = this._gameStatus.NoteDataGet();
             notescore.initialScore = beforeCutScore + cutDistanceScore;
             notescore.finalScore = beforeCutScore + afterCutScore + cutDistanceScore;
             notescore.cutDistanceScore = cutDistanceScore;
-            notescore.cutMultiplier = multiplier;
-
-            if (noteCutTiming.TryRemove(noteCutInfo, out var time)) {
-                notescore.cutTime = time;
-            }
+            notescore.cutMultiplier = csb.multiplier;
+            notescore.cutTime = noteFullyCutData.noteCutTiming;
             notescore.bs_event = BeatSaberEvent.NoteFullyCut;
             this._gameStatus.NoteDataIndexUp();
 
-            acsb.didFinishEvent -= OnNoteWasFullyCut;
+            csb.didFinishEvent.Remove(this);
         }
 
         /// <summary>
@@ -165,7 +152,7 @@ namespace DataRecorder.Models
 
             var notescore = this._gameStatus.NoteDataGet();
 
-            SetNoteCutStatus(noteData);
+            SetNoteDataStatus(noteData);
 
             if (noteData.colorType == ColorType.None) {
                 this._gameStatus.passedBombs++;
@@ -212,10 +199,10 @@ namespace DataRecorder.Models
         {
             switch (obj.levelEndStateType) {
                 case LevelCompletionResults.LevelEndStateType.Failed:
-                    OnLevelFailed();
+                    this.OnLevelFailed();
                     break;
                 default:
-                    OnLevelFinished();
+                    this.OnLevelFinished();
                     break;
             }
         }
@@ -295,15 +282,12 @@ namespace DataRecorder.Models
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // プライベートメソッド
         /// <summary>
-        /// ノーツカットの情報取得
+        /// ノーツデータの情報取得
         /// </summary>
         /// <param name="noteData"></param>
-        /// <param name="noteCutInfo"></param>
-        /// <param name="initialCut"></param>
-        private void SetNoteCutStatus(NoteData noteData, NoteCutInfo noteCutInfo = null, bool initialCut = true)
+        private void SetNoteDataStatus(NoteData noteData)
         {
-            var gameStatus = this._gameStatus;
-            var notescore = gameStatus.NoteDataGet();
+            var notescore = this._gameStatus.NoteDataGet();
 
             // Backwards compatibility for <1.12.1
             notescore.noteTime = noteData.time;
@@ -315,38 +299,45 @@ namespace DataRecorder.Models
             // If long notes are ever introduced, this name will make no sense
             notescore.timeToNextBasicNote = noteData.timeToNextColorNote;
             notescore.time = Utility.GetCurrentTime();
+        }
+        /// <summary>
+        /// ノーツカットの情報取得
+        /// </summary>
+        /// <param name="noteCutInfo"></param>
+        /// <param name="initialCut"></param>
+        private void SetNoteCutStatus(NoteCutInfo noteCutInfo, bool initialCut = true)
+        {
+            var notescore = this._gameStatus.NoteDataGet();
 
-            if (noteCutInfo != null) {
-                notescore.speedOK = noteCutInfo.speedOK;
-                notescore.directionOK = noteCutInfo.directionOK;
-                notescore.saberTypeOK = noteCutInfo.saberTypeOK;
-                notescore.wasCutTooSoon = noteCutInfo.wasCutTooSoon;
-                notescore.saberSpeed = noteCutInfo.saberSpeed;
-                notescore.saberDirX = noteCutInfo.saberDir[0];
-                notescore.saberDirY = noteCutInfo.saberDir[1];
-                notescore.saberDirZ = noteCutInfo.saberDir[2];
-                notescore.saberType = noteCutInfo.saberType;
-                notescore.swingRating = noteCutInfo.swingRatingCounter == null ? -1 : noteCutInfo.swingRatingCounter.beforeCutRating;
-                notescore.swingRatingFullyCut = noteCutInfo.swingRatingCounter == null ? -1 : initialCut ? 0 : noteCutInfo.swingRatingCounter.afterCutRating;
-                notescore.timeDeviation = noteCutInfo.timeDeviation;
-                notescore.cutDirectionDeviation = noteCutInfo.cutDirDeviation;
-                notescore.cutPointX = noteCutInfo.cutPoint[0];
-                notescore.cutPointY = noteCutInfo.cutPoint[1];
-                notescore.cutPointZ = noteCutInfo.cutPoint[2];
-                notescore.cutNormalX = noteCutInfo.cutNormal[0];
-                notescore.cutNormalY = noteCutInfo.cutNormal[1];
-                notescore.cutNormalZ = noteCutInfo.cutNormal[2];
-                notescore.cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
-            }
+            notescore.speedOK = noteCutInfo.speedOK;
+            notescore.directionOK = noteCutInfo.directionOK;
+            notescore.saberTypeOK = noteCutInfo.saberTypeOK;
+            notescore.wasCutTooSoon = noteCutInfo.wasCutTooSoon;
+            notescore.saberSpeed = noteCutInfo.saberSpeed;
+            notescore.saberDirX = noteCutInfo.saberDir[0];
+            notescore.saberDirY = noteCutInfo.saberDir[1];
+            notescore.saberDirZ = noteCutInfo.saberDir[2];
+            notescore.saberType = noteCutInfo.saberType;
+            notescore.swingRating = noteCutInfo.swingRatingCounter == null ? -1 : noteCutInfo.swingRatingCounter.beforeCutRating;
+            notescore.swingRatingFullyCut = noteCutInfo.swingRatingCounter == null ? -1 : initialCut ? 0 : noteCutInfo.swingRatingCounter.afterCutRating;
+            notescore.timeDeviation = noteCutInfo.timeDeviation;
+            notescore.cutDirectionDeviation = noteCutInfo.cutDirDeviation;
+            notescore.cutPointX = noteCutInfo.cutPoint[0];
+            notescore.cutPointY = noteCutInfo.cutPoint[1];
+            notescore.cutPointZ = noteCutInfo.cutPoint[2];
+            notescore.cutNormalX = noteCutInfo.cutNormal[0];
+            notescore.cutNormalY = noteCutInfo.cutNormal[1];
+            notescore.cutNormalZ = noteCutInfo.cutNormal[2];
+            notescore.cutDistanceToCenter = noteCutInfo.cutDistanceToCenter;
         }
         /// <summary>
         /// コンボ乗数、最大スコア・ランクの更新
         /// </summary>
         private void UpdateModMultiplier()
         {
-            this._gameStatus.modifierMultiplier = gameplayModifiersSO.GetTotalMultiplier(gameplayModifiers, gameEnergyCounter.energy);
-            this._gameStatus.maxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(gameplayCoreSceneSetupData.difficultyBeatmap.beatmapData.cuttableNotesType), gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
-            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
+            this._gameStatus.modifierMultiplier = this.gameplayModifiersSO.GetTotalMultiplier(this.gameplayModifiersSO.CreateModifierParamsList(this.gameplayModifiers), this.gameEnergyCounter.energy);
+            this._gameStatus.maxScore = this.gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(this.gameplayCoreSceneSetupData.difficultyBeatmap.beatmapData.cuttableNotesType), this.gameplayModifiersSO.CreateModifierParamsList(this.gameplayModifiers), this.gameplayModifiersSO, this.gameEnergyCounter.energy);
+            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(this.gameplayModifiers, this.gameplayModifiersSO, this.gameEnergyCounter.energy);
         }
 
         /// <summary>
@@ -355,8 +346,8 @@ namespace DataRecorder.Models
         private void UpdateCurrentMaxScore()
         {
             GameStatus gameStatus = this._gameStatus;
-            int currentMaxScoreBeforeMultiplier = ScoreModel.MaxRawScoreForNumberOfNotes(gameStatus.passedNotes);
-            gameStatus.currentMaxScore = gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModifiers, gameplayModifiersSO, gameEnergyCounter.energy);
+            var currentMaxScoreBeforeMultiplier = ScoreModel.MaxRawScoreForNumberOfNotes(gameStatus.passedNotes);
+            gameStatus.currentMaxScore = this.gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, this.gameplayModifiersSO.CreateModifierParamsList(this.gameplayModifiers), this.gameplayModifiersSO, this.gameEnergyCounter.energy);
             gameStatus.rank = RankModel.GetRankForScore(gameStatus.rawScore, gameStatus.score, currentMaxScoreBeforeMultiplier, gameStatus.currentMaxScore);
         }
 
@@ -366,13 +357,29 @@ namespace DataRecorder.Models
         /// <returns></returns>
         private IEnumerator SongStartWait()
         {
-            float songTime = this.audioTimeSyncController.songTime;
-            yield return new WaitWhile(() => this.audioTimeSyncController.songTime > songTime);
-            PracticeSettings practiceSettings = gameplayCoreSceneSetupData.practiceSettings;
-            float songSpeedMul = gameplayCoreSceneSetupData.gameplayModifiers.songSpeedMul;
+            yield return new WaitWhile(() => this.audioTimeSyncController.songTime > this.audioTimeSyncController.songTime);
+            PracticeSettings practiceSettings = this.gameplayCoreSceneSetupData.practiceSettings;
+            float songSpeedMul = this.gameplayCoreSceneSetupData.gameplayModifiers.songSpeedMul;
             this._gameStatus.start = Utility.GetCurrentTime() - (long)(this.audioTimeSyncController.songTime * 1000f / songSpeedMul);
             if (practiceSettings != null) this._gameStatus.start -= (long)(practiceSettings.startSongTime * 1000f / songSpeedMul);
             Logger.Debug("Song Start");
+        }
+
+        /// <summary>
+        /// noteFullyCutイベントへのデータ渡し用
+        /// </summary>
+        private readonly struct NoteFullyCutData
+        {
+            public readonly NoteData noteData;
+            public readonly NoteCutInfo noteCutInfo;
+            public readonly long noteCutTiming;
+
+            public NoteFullyCutData(NoteData noteData, NoteCutInfo noteCutInfo, long noteCutTiming)
+            {
+                this.noteData = noteData;
+                this.noteCutInfo = noteCutInfo;
+                this.noteCutTiming = noteCutTiming;
+            }
         }
 
         #endregion
@@ -389,21 +396,16 @@ namespace DataRecorder.Models
         private GameEnergyCounter gameEnergyCounter;
         private MultiplayerLocalActivePlayerFacade multiplayerLocalActivePlayerFacade;
         private ILevelEndActions levelEndActions;
-        private ConcurrentDictionary<NoteCutInfo, NoteData> noteCutMapping = new ConcurrentDictionary<NoteCutInfo, NoteData>();
-        private ConcurrentDictionary<NoteCutInfo, long> noteCutTiming = new ConcurrentDictionary<NoteCutInfo, long>();
+        private readonly Dictionary<CutScoreBuffer, NoteFullyCutData> noteCutMapping = new Dictionary<CutScoreBuffer, NoteFullyCutData>();
         private GameplayModifiersModelSO gameplayModifiersSO;
+        /// protected readonly LazyCopyHashSet<ISaberSwingRatingCounterDidFinishReceiver> SaberSwingRatingCounter._didFinishReceivers = new LazyCopyHashSet<ISaberSwingRatingCounterDidFinishReceiver>() // contains the desired CutScoreBuffer
+        private FieldInfo saberSwingRatingCounterDidFinishReceiversField = typeof(SaberSwingRatingCounter).GetField("_didFinishReceivers", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
-        /// protected NoteCutInfo CutScoreBuffer._noteCutInfo
-        private FieldInfo noteCutInfoField = typeof(CutScoreBuffer).GetField("_noteCutInfo", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-        /// protected List<CutScoreBuffer> ScoreController._cutScoreBuffers // contains a list of after cut buffers
-        private FieldInfo afterCutScoreBuffersField = typeof(ScoreController).GetField("_cutScoreBuffers", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-        /// private int CutScoreBuffer#_multiplier
-        private FieldInfo cutScoreBufferMultiplierField = typeof(CutScoreBuffer).GetField("_multiplier", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
         [Inject]
-        private IRepository _repository;
+        private readonly IRepository _repository;
         [Inject]
-        private GameStatus _gameStatus;
+        private readonly GameStatus _gameStatus;
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // 構築・破棄
@@ -489,17 +491,17 @@ namespace DataRecorder.Models
             //BeatMapデータの登録
             this._gameStatus.scene = BeatSaberScene.Song;
 
-            IDifficultyBeatmap diff = gameplayCoreSceneSetupData.difficultyBeatmap;
+            IDifficultyBeatmap diff = this.gameplayCoreSceneSetupData.difficultyBeatmap;
             IBeatmapLevel level = diff.level;
 
             this._gameStatus.partyMode = Gamemode.IsPartyActive;
             this._gameStatus.mode = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
 
-            gameplayModifiers = gameplayCoreSceneSetupData.gameplayModifiers;
-            PlayerSpecificSettings playerSettings = gameplayCoreSceneSetupData.playerSpecificSettings;
-            PracticeSettings practiceSettings = gameplayCoreSceneSetupData.practiceSettings;
+            this.gameplayModifiers = this.gameplayCoreSceneSetupData.gameplayModifiers;
+            PlayerSpecificSettings playerSettings = this.gameplayCoreSceneSetupData.playerSpecificSettings;
+            PracticeSettings practiceSettings = this.gameplayCoreSceneSetupData.practiceSettings;
 
-            float songSpeedMul = gameplayModifiers.songSpeedMul;
+            float songSpeedMul = this.gameplayModifiers.songSpeedMul;
             if (practiceSettings != null) songSpeedMul = practiceSettings.songSpeedMul;
 
             // HTTPStatus 1.12.1以下との下位互換性のために、NoteDataからidへのマッピングを生成します。 [Generate NoteData to id mappings for backwards compatiblity with <1.12.1]
@@ -538,22 +540,26 @@ namespace DataRecorder.Models
             this.UpdateModMultiplier();
 
             this._gameStatus.songSpeedMultiplier = songSpeedMul;
-            this._gameStatus.batteryLives = gameEnergyCounter.batteryLives;
+            this._gameStatus.batteryLives = this.gameEnergyCounter.batteryLives;
 
-            this._gameStatus.modObstacles = gameplayModifiers.enabledObstacleType;
-            this._gameStatus.modInstaFail = gameplayModifiers.instaFail;
-            this._gameStatus.modNoFail = gameplayModifiers.noFailOn0Energy;
-            this._gameStatus.modBatteryEnergy = gameplayModifiers.energyType == GameplayModifiers.EnergyType.Battery;
-            this._gameStatus.modDisappearingArrows = gameplayModifiers.disappearingArrows;
-            this._gameStatus.modNoBombs = gameplayModifiers.noBombs;
-            this._gameStatus.modSongSpeed = gameplayModifiers.songSpeed;
-            this._gameStatus.modNoArrows = gameplayModifiers.noArrows;
-            this._gameStatus.modGhostNotes = gameplayModifiers.ghostNotes;
-            this._gameStatus.modFailOnSaberClash = gameplayModifiers.failOnSaberClash;
-            this._gameStatus.modStrictAngles = gameplayModifiers.strictAngles;
-            this._gameStatus.modFastNotes = gameplayModifiers.fastNotes;
+            this._gameStatus.modObstacles = this.gameplayModifiers.enabledObstacleType;
+            this._gameStatus.modInstaFail = this.gameplayModifiers.instaFail;
+            this._gameStatus.modNoFail = this.gameplayModifiers.noFailOn0Energy;
+            this._gameStatus.modBatteryEnergy = this.gameplayModifiers.energyType == GameplayModifiers.EnergyType.Battery;
+            this._gameStatus.modDisappearingArrows = this.gameplayModifiers.disappearingArrows;
+            this._gameStatus.modNoBombs = this.gameplayModifiers.noBombs;
+            this._gameStatus.modSongSpeed = this.gameplayModifiers.songSpeed;
+            this._gameStatus.modNoArrows = this.gameplayModifiers.noArrows;
+            this._gameStatus.modGhostNotes = this.gameplayModifiers.ghostNotes;
+            this._gameStatus.modFailOnSaberClash = this.gameplayModifiers.failOnSaberClash;
+            this._gameStatus.modStrictAngles = this.gameplayModifiers.strictAngles;
+            this._gameStatus.modFastNotes = this.gameplayModifiers.fastNotes;
+            this._gameStatus.modSmallNotes = this.gameplayModifiers.smallCubes;
+            this._gameStatus.modProMode = this.gameplayModifiers.proMode;
+            this._gameStatus.modZenMode = this.gameplayModifiers.zenMode;
 
-            this._gameStatus.staticLights = playerSettings.staticLights;
+
+            this._gameStatus.staticLights = playerSettings.environmentEffectsFilterPreset != EnvironmentEffectsFilterPreset.AllEffects;
             this._gameStatus.leftHanded = playerSettings.leftHanded;
             this._gameStatus.playerHeight = playerSettings.playerHeight;
             this._gameStatus.sfxVolume = playerSettings.sfxVolume;
@@ -561,6 +567,9 @@ namespace DataRecorder.Models
             this._gameStatus.noHUD = playerSettings.noTextsAndHuds;
             this._gameStatus.advancedHUD = playerSettings.advancedHud;
             this._gameStatus.autoRestart = playerSettings.autoRestart;
+            this._gameStatus.saberTrailIntensity = playerSettings.saberTrailIntensity;
+            this._gameStatus.environmentEffects = playerSettings.environmentEffectsFilterPreset;
+            this._gameStatus.hideNoteSpawningEffect = playerSettings.hideNoteSpawnEffect;
             this._gameStatus.startTime = Utility.GetCurrentTime();
             this._gameStatus.cleared = BeatSaberEvent.Menu;
             this._gameStatus.NoteDataSizeCheck();
@@ -577,7 +586,7 @@ namespace DataRecorder.Models
         /// <param name="disposing"></param>
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue) {
+            if (!this.disposedValue) {
                 if (disposing) {
                     // TODO: マネージド状態を破棄します (マネージド オブジェクト)
 
@@ -586,8 +595,7 @@ namespace DataRecorder.Models
                         this._repository.playDataAddFlag = true;
 
                         // 終了前にプレイヤーがマップを離れることで解決しないAfterCutScoreBuffersの参照を解放。(Release references for AfterCutScoreBuffers that don't resolve due to player leaving the map before finishing.)
-                        noteCutMapping?.Clear();
-                        noteCutTiming?.Clear();
+                        this.noteCutMapping?.Clear();
 
                         if (this.pauseController != null) {
                             this.pauseController.didPauseEvent -= this.OnGamePause;
@@ -627,7 +635,7 @@ namespace DataRecorder.Models
 
                 // TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします
                 // TODO: 大きなフィールドを null に設定します
-                disposedValue = true;
+                this.disposedValue = true;
             }
         }
 
@@ -641,7 +649,7 @@ namespace DataRecorder.Models
         public void Dispose()
         {
             // このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
-            Dispose(disposing: true);
+            this.Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
         #endregion
