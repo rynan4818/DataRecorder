@@ -560,9 +560,11 @@ namespace DataRecorder.Models
 
             if (diff.difficulty == BeatmapDifficulty.ExpertPlus) {
                 this._gameStatus.staticLights = playerSettings.environmentEffectsFilterExpertPlusPreset != EnvironmentEffectsFilterPreset.AllEffects;
+                this._gameStatus.environmentEffects = playerSettings.environmentEffectsFilterExpertPlusPreset;
             }
             else {
                 this._gameStatus.staticLights = playerSettings.environmentEffectsFilterDefaultPreset != EnvironmentEffectsFilterPreset.AllEffects;
+                this._gameStatus.environmentEffects = playerSettings.environmentEffectsFilterDefaultPreset;
             }
             this._gameStatus.leftHanded = playerSettings.leftHanded;
             this._gameStatus.playerHeight = playerSettings.playerHeight;
@@ -572,7 +574,6 @@ namespace DataRecorder.Models
             this._gameStatus.advancedHUD = playerSettings.advancedHud;
             this._gameStatus.autoRestart = playerSettings.autoRestart;
             this._gameStatus.saberTrailIntensity = playerSettings.saberTrailIntensity;
-            this._gameStatus.environmentEffects = playerSettings.environmentEffectsFilterDefaultPreset;
             this._gameStatus.hideNoteSpawningEffect = playerSettings.hideNoteSpawnEffect;
             this._gameStatus.startTime = Utility.GetCurrentTime();
             this._gameStatus.cleared = BeatSaberEvent.Menu;
