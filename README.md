@@ -5,7 +5,7 @@ BeatSaber1.13.0までは[Beat Saber HTTP Status +Database](https://github.com/ry
 
 オーバーレイ用には別途下記のプラグインを使用して下さい。
 - [Beat Saber HTTP Status](https://github.com/opl-/beatsaber-http-status)
-- [Beat Saber HTTP Status](https://github.com/denpadokei/beatsaber-http-status)※デンバ時計さんの、パフォーマンス改善版
+- [HttpSiraStatus](https://github.com/denpadokei/beatsaber-http-status)※デンバ時計さんの、パフォーマンス改善版
 - [DataPuller](https://github.com/kOFReadie/BSDataPuller)
 
 ※HTTP Statusと、DataPullerは互換性は無いのでそれぞれ専用のオーバーレイが必要です
