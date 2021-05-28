@@ -195,14 +195,14 @@ namespace DataRecorder.Models
         /// マルチプレイヤーモードでの終了時
         /// </summary>
         /// <param name="obj"></param>
-        private void OnMultiplayerLevelFinished(LevelCompletionResults obj)
+        private void OnMultiplayerLevelFinished(MultiplayerLevelCompletionResults obj)
         {
-            switch (obj.levelEndStateType) {
-                case LevelCompletionResults.LevelEndStateType.Failed:
-                    this.OnLevelFailed();
+            switch (obj.levelEndState) {
+                case MultiplayerLevelCompletionResults.MultiplayerLevelEndState.Cleared:
+                    this.OnLevelFinished();
                     break;
                 default:
-                    this.OnLevelFinished();
+                    this.OnLevelFailed();
                     break;
             }
         }
