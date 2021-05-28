@@ -72,6 +72,7 @@ namespace DataRecorder.Models
             if (noteData.colorType != ColorType.None && noteCutInfo.allIsOK) {
                 gameStatus.passedNotes++;
                 gameStatus.hitNotes++;
+                UpdateCurrentMaxScore();
 
                 var didFinishReceivers = (LazyCopyHashSet<ISaberSwingRatingCounterDidFinishReceiver>)saberSwingRatingCounterDidFinishReceiversField.GetValue(noteCutInfo.swingRatingCounter);
                 foreach (ISaberSwingRatingCounterDidFinishReceiver receiver in didFinishReceivers.items) {
@@ -107,6 +108,7 @@ namespace DataRecorder.Models
             else {
                 gameStatus.passedNotes++;
                 gameStatus.missedNotes++;
+                UpdateCurrentMaxScore();
 
                 notescore.bs_event = BeatSaberEvent.NoteMissed;
             }
@@ -162,6 +164,7 @@ namespace DataRecorder.Models
             else {
                 this._gameStatus.passedNotes++;
                 this._gameStatus.missedNotes++;
+                UpdateCurrentMaxScore();
 
                 notescore.bs_event = BeatSaberEvent.NoteMissed;
             }
@@ -177,7 +180,6 @@ namespace DataRecorder.Models
         {
             this._gameStatus.rawScore = scoreBeforeMultiplier;
             this._gameStatus.score = scoreAfterMultiplier;
-            this.UpdateCurrentMaxScore();
         }
 
         /// <summary>
@@ -244,6 +246,7 @@ namespace DataRecorder.Models
                 this._gameStatus.cleared = BeatSaberEvent.Finished;
             this._gameStatus.endTime = Utility.GetCurrentTime();
             this._gameStatus.endFlag = 1;
+            UpdateCurrentMaxScore();
         }
 
         /// <summary>
@@ -254,6 +257,7 @@ namespace DataRecorder.Models
             this._gameStatus.cleared = BeatSaberEvent.Failed;
             this._gameStatus.endTime = Utility.GetCurrentTime();
             this._gameStatus.endFlag = 1;
+            UpdateCurrentMaxScore();
         }
 
         /// <summary>
