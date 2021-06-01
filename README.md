@@ -19,9 +19,11 @@ BeatSaber1.13.0までは[Beat Saber HTTP Status +Database](https://github.com/ry
         - 従来のHTTP Status+DBで`Beat Saber_Data\Managed`にコピーしていた同名のDLLファイルが残っている場合は削除して下さい。
     2. `Plugins`フォルダに`DataRecorder.dll`ファイルをコピーします。
 3. このmodは以下のプラグインに依存するため、[ModAssistant](https://github.com/Assistant/ModAssistant)でインストールして下さい。
-    - BSIPA 4.1.4以上
-    - BS Utils 1.7.0以上
-    - SiraUtil 2.4.0以上
+    - BSIPA
+    - BS Utils
+    - SiraUtil
+    
+    それぞれの依存modの対応バージョンは[manifest.json](https://github.com/rynan4818/DataRecorder/blob/main/DataRecorder/manifest.json)の`dependsOn`項目を参照下さい。
 4. **従来のHTTP Status+DBを使用していた方は、データベースの場所が変更になっていますので下記手順で移動して下さい。**
     1. .一度BeatSaberを起動して終了して下さい。
     2. `UserData`フォルダに`DataRecorder`フォルダが作成され、その中に`beatsaber.db`が作成されます。
