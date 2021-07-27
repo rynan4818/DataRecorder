@@ -10,6 +10,7 @@ using System.Reflection;
 using UnityEngine;
 using Zenject;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace DataRecorder.Models
 {
@@ -530,7 +531,7 @@ namespace DataRecorder.Models
             this._gameStatus.songBPM = level.beatsPerMinute;
             this._gameStatus.noteJumpSpeed = diff.noteJumpMovementSpeed;
             // 13は "custom_level_"、40はSHA-1ハッシュの長さを表すマジックナンバー
-            this._gameStatus.songHash = level.levelID.StartsWith("custom_level_") && !level.levelID.EndsWith(" WIP") ? level.levelID.Substring(13, 40) : null;
+            this._gameStatus.songHash = Regex.IsMatch(level.levelID, "^custom_level_[0-9A-F]{40}", RegexOptions.IgnoreCase) && !level.levelID.EndsWith(" WIP") ? level.levelID.Substring(13, 40) : null;
             this._gameStatus.levelId = level.levelID;
             this._gameStatus.songTimeOffset = (long)(level.songTimeOffset * 1000f / songSpeedMul);
             this._gameStatus.length = (long)(level.beatmapLevelData.audioClip.length * 1000f / songSpeedMul);
