@@ -341,7 +341,7 @@ namespace DataRecorder.Models
         private void UpdateModMultiplier()
         {
             this._gameStatus.modifierMultiplier = this.gameplayModifiersSO.GetTotalMultiplier(this.gameplayModifiersSO.CreateModifierParamsList(this.gameplayModifiers), this.gameEnergyCounter.energy);
-            this._gameStatus.maxScore = this.gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(this.gameplayCoreSceneSetupData.difficultyBeatmap.beatmapData.cuttableNotesType), this.gameplayModifiersSO.CreateModifierParamsList(this.gameplayModifiers), this.gameplayModifiersSO, this.gameEnergyCounter.energy);
+            this._gameStatus.maxScore = this.gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(ScoreModel.MaxRawScoreForNumberOfNotes(this.gameplayCoreSceneSetupData.difficultyBeatmap.beatmapData.cuttableNotesCount), this.gameplayModifiersSO.CreateModifierParamsList(this.gameplayModifiers), this.gameplayModifiersSO, this.gameEnergyCounter.energy);
             this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(this.gameplayModifiers, this.gameplayModifiersSO, this.gameEnergyCounter.energy);
         }
 
@@ -537,7 +537,7 @@ namespace DataRecorder.Models
             this._gameStatus.length = (long)(level.beatmapLevelData.audioClip.length * 1000f / songSpeedMul);
             this._gameStatus.paused = 0;
             this._gameStatus.difficulty = diff.difficulty.Name();
-            this._gameStatus.notesCount = diff.beatmapData.cuttableNotesType;
+            this._gameStatus.notesCount = diff.beatmapData.cuttableNotesCount;
             this._gameStatus.bombsCount = diff.beatmapData.bombsCount;
             this._gameStatus.obstaclesCount = diff.beatmapData.obstaclesCount;
             this._gameStatus.environmentName = level.environmentInfo.sceneInfo.sceneName;
