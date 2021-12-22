@@ -12,7 +12,7 @@ namespace DataRecorder.Installers
     {
         public override void InstallBindings()
         {
-            this.Container.BindInterfacesAndSelfTo<ScoreManager>().AsCached();
+            this.Container.BindInterfacesAndSelfTo<ScoreManager>().AsCached().NonLazy();
         }
     }
 }
