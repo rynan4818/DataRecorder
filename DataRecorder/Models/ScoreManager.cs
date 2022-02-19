@@ -200,8 +200,8 @@ namespace DataRecorder.Models
         /// <param name="obj"></param>
         private void OnMultiplayerLevelFinished(MultiplayerLevelCompletionResults obj)
         {
-            switch (obj.levelEndState) {
-                case MultiplayerLevelCompletionResults.MultiplayerLevelEndState.Cleared:
+            switch (obj.playerLevelEndState) {
+                case MultiplayerLevelCompletionResults.MultiplayerPlayerLevelEndState.SongFinished:
                     this.OnLevelFinished();
                     break;
                 default:
