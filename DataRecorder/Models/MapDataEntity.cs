@@ -28,9 +28,5 @@ namespace DataRecorder.Models
         /// ノーツのカット方向
         /// </summary>
         public NoteCutDirection cutDirection { get; set; } = NoteCutDirection.None;
-        /// <summary>
-        /// ノーツの間隔？
-        /// </summary>
-        public float duration { get; set; } = 0;
     }
 }

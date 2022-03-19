@@ -751,7 +751,6 @@ namespace DataRecorder.Models
                     this.noteScores[i].bs_event = BeatSaberEvent.Menu;
                     this.noteScores[i].time = 0;
                     this.noteScores[i].noteTime = 0;
-                    this.noteScores[i].duration = 0;
                     this.noteScores[i].cutTime = null;
                     this.noteScores[i].rawScore = 0;
                     this.noteScores[i].score = 0;
@@ -839,7 +838,6 @@ namespace DataRecorder.Models
                     this.mapDatas[i].noteLineLayer = 0;
                     this.mapDatas[i].colorType = 0;
                     this.mapDatas[i].cutDirection = 0;
-                    this.mapDatas[i].duration = 0;
                 }
             }
             this.mapIndex = 0;
@@ -880,8 +878,7 @@ namespace DataRecorder.Models
                 a.lineIndex == this.noteScores[noteIndex].noteLine &&
                 a.noteLineLayer == this.noteScores[noteIndex].noteLayer &&
                 a.colorType == this.noteScores[noteIndex].colorType &&
-                (this.modNoArrows || a.cutDirection == this.noteScores[noteIndex].noteCutDirection) &&
-                a.duration == this.noteScores[noteIndex].duration;
+                (this.modNoArrows || a.cutDirection == this.noteScores[noteIndex].noteCutDirection);
         }
         #endregion
     }

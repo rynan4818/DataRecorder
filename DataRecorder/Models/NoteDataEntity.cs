@@ -24,11 +24,6 @@ namespace DataRecorder.Models
         public float noteTime { get; set; } = 0;
 
         /// <summary>
-        /// [Game] ノーツの間隔？ [noteID調査用]
-        /// </summary>
-        public float duration { get; set; } = 0;
-
-        /// <summary>
         /// [Game] noteCut時間
         /// </summary>
         public long? cutTime { get; set; } = null;
