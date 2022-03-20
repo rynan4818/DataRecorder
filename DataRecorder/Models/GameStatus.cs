@@ -751,6 +751,7 @@ namespace DataRecorder.Models
                     this.noteScores[i].bs_event = BeatSaberEvent.Menu;
                     this.noteScores[i].time = 0;
                     this.noteScores[i].noteTime = 0;
+                    this.noteScores[i].scoringType = NoteData.ScoringType.Ignore;
                     this.noteScores[i].cutTime = null;
                     this.noteScores[i].rawScore = 0;
                     this.noteScores[i].score = 0;
@@ -874,11 +875,11 @@ namespace DataRecorder.Models
         /// </summary>
         private bool NoteDataEquals(MapDataEntity a)
         {
-            return a.time == this.noteScores[noteIndex].noteTime &&
+            return (this.noteScores[noteIndex].scoringType == NoteData.ScoringType.BurstSliderElement && this.noteScores[noteIndex].noteTime - a.time < 0.1f || a.time == this.noteScores[noteIndex].noteTime) &&
                 a.lineIndex == this.noteScores[noteIndex].noteLine &&
                 a.noteLineLayer == this.noteScores[noteIndex].noteLayer &&
                 a.colorType == this.noteScores[noteIndex].colorType &&
-                (this.modNoArrows || a.cutDirection == this.noteScores[noteIndex].noteCutDirection);
+                (this.modNoArrows || this.noteScores[noteIndex].scoringType == NoteData.ScoringType.BurstSliderElement || a.cutDirection == this.noteScores[noteIndex].noteCutDirection);
         }
         #endregion
     }

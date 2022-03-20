@@ -24,6 +24,11 @@ namespace DataRecorder.Models
         public float noteTime { get; set; } = 0;
 
         /// <summary>
+        /// [Game] スコアリングタイプ [noteID調査用]
+        /// </summary>
+        public NoteData.ScoringType scoringType { get; set; } = NoteData.ScoringType.Ignore;
+
+        /// <summary>
         /// [Game] noteCut時間
         /// </summary>
         public long? cutTime { get; set; } = null;

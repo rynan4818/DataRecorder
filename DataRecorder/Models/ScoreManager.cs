@@ -142,6 +142,9 @@ namespace DataRecorder.Models
         /// <param name="cutScoreBuffer"></param>
         public void HandleCutStart(NoteData noteData, NoteCutInfo noteCutInfo, IReadonlyCutScoreBuffer cutScoreBuffer)
         {
+            var nowtime = Utility.GetCurrentTime();
+            //Logger.Debug($"\tHandleCutStart\t{nowtime}\t{cutScoreBuffer?.ToString()}\t{noteData.gameplayType.ToString()}\t{noteData.scoringType.ToString()}\t{noteData.cutDirection}\t{noteData.time}\t{noteData.lineIndex}\t{noteData.noteLineLayer}\t{noteData.colorType}");
+
             var gameStatus = this._gameStatus;
             var notescore = gameStatus.NoteDataGet();
 
@@ -150,8 +153,23 @@ namespace DataRecorder.Models
                 gameStatus.hitNotes++;
                 UpdateCurrentMaxScore();
 
-                noteCutMapping.TryAdd(cutScoreBuffer, new NoteFullyCutData(noteData, noteCutInfo, Utility.GetCurrentTime()));
-                cutScoreBuffer.RegisterDidFinishReceiver(this);
+                if (noteData.scoringType == NoteData.ScoringType.BurstSliderElement)
+                {
+                    this.SetNoteDataStatus(noteData);
+                    this.SetNoteCutStatus(noteCutInfo, noteData, cutScoreBuffer, true);
+                    var fixScore = ScoreModel.GetNoteScoreDefinition(noteData.scoringType).fixedCutScore;
+                    notescore.initialScore = fixScore;
+                    notescore.finalScore = fixScore;
+                    notescore.cutDistanceScore = 0;
+                    notescore.bs_event = BeatSaberEvent.NoteFullyCut;
+                    notescore.cutTime = nowtime;
+                    gameStatus.NoteDataIndexUp();
+                }
+                else
+                {
+                    noteCutMapping.TryAdd(cutScoreBuffer, new NoteFullyCutData(noteData, noteCutInfo, nowtime));
+                    cutScoreBuffer.RegisterDidFinishReceiver(this);
+                }
                 return;
             }
 
@@ -198,6 +216,7 @@ namespace DataRecorder.Models
 
             var noteFullyCutData = noteCutMapping[csb];
             noteCutMapping.Remove(csb);
+            //Logger.Debug($"\tHandleCutScoreBufferDidFinish\t{noteFullyCutData.noteCutTiming}\t{csb?.ToString()}\t{noteFullyCutData.noteData.gameplayType.ToString()}\t{noteFullyCutData.noteData.scoringType.ToString()}\t{noteFullyCutData.noteData.cutDirection}\t{noteFullyCutData.noteData.time}\t{noteFullyCutData.noteData.lineIndex}\t{noteFullyCutData.noteData.noteLineLayer}\t{noteFullyCutData.noteData.colorType}");
 
             var noteCutInfo = noteFullyCutData.noteCutInfo;
 
@@ -374,6 +393,7 @@ namespace DataRecorder.Models
 
             // Backwards compatibility for <1.12.1
             notescore.noteTime = noteData.time;
+            notescore.scoringType = noteData.scoringType;
             notescore.colorType = noteData.colorType;
             notescore.noteCutDirection = noteData.cutDirection;
             notescore.noteLine = noteData.lineIndex;
@@ -614,6 +634,7 @@ namespace DataRecorder.Models
             var beatmapObjectsData = beatmapData.GetBeatmapDataItems<NoteData>().ToList();
             foreach (BeatmapObjectData beatmapObjectData in beatmapObjectsData) {
                 if (beatmapObjectData is NoteData noteData) {
+                    //Logger.Debug($"\t{noteData.gameplayType.ToString()}\t{noteData.scoringType.ToString()}\t{noteData.cutDirection}\t{noteData.time}\t{noteData.lineIndex}\t{noteData.noteLineLayer}\t{noteData.colorType}");
                     var mapdata = this._gameStatus.MapDataGet();
                     mapdata.time = noteData.time;
                     mapdata.lineIndex = noteData.lineIndex;
