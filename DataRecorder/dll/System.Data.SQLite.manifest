@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/beat-saber-modding-group/BSIPA-MetadataFileSchema/master/Schema.json",
+  "author": "SQLite Development Team",
+  "description": "A .NET library to SQLite database.",
+  "id": "System.Data.SQLite",
+  "name": "System.Data.SQLite",
+  "version": "1.0.115",
+  "links": {
+    "project-home": "https://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki"
+  },
+  "files": [
+    "Libs/System.Data.SQLite.dll",
+    "Libs/SQLite.Interop.dll"
+  ]
+}
