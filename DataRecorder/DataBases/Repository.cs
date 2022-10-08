@@ -485,6 +485,7 @@ namespace DataRecorder.DataBases
                 catch (Exception e) {
                     Logger.Error(e);
                 }
+                this._connection.Close();
             }
             this.databaseInsertTime = null;
             this.pauseEventAddFlag = null;
@@ -836,6 +837,7 @@ namespace DataRecorder.DataBases
                     Logger.Error("DB EnergyChange INSERT Error:" + e.Message);
                 }
                 #endregion
+                this._connection.Close();
             }
             this._gameStatus.ResetGameStatus();
             this.playDataAddFlag = false;
@@ -1026,6 +1028,7 @@ namespace DataRecorder.DataBases
                 catch (Exception e) {
                     Logger.Error(e);
                 }
+                this._connection.Close();
             }
         }
 

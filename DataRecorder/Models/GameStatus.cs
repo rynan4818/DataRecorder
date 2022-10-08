@@ -718,7 +718,7 @@ namespace DataRecorder.Models
             // Backwards compatibility for <1.12.1
             int noteID = -1;
             // Check the near notes first for performance
-            for (int i = Math.Max(0, this.lastNoteId - 10); i < this.mapDatas.Length; i++) {
+            for (int i = Math.Max(0, this.lastNoteId - 10); i < this.mapEndIndex; i++) {
                 if (NoteDataEquals(this.mapDatas[i])) {
                     noteID = i;
                     if (i > this.lastNoteId) this.lastNoteId = i;
