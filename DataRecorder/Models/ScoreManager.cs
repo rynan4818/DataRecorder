@@ -505,6 +505,7 @@ namespace DataRecorder.Models
         private ILevelEndActions levelEndActions;
         private readonly Dictionary<IReadonlyCutScoreBuffer, NoteFullyCutData> noteCutMapping = new Dictionary<IReadonlyCutScoreBuffer, NoteFullyCutData>();
         private GameplayModifiersModelSO gameplayModifiersSO;
+        private IReadonlyBeatmapData _beatmapData;
         /// protected readonly BeatmapObjectManager _beatmapObjectManager
         private FieldInfo scoreControllerBeatmapObjectManagerField = typeof(ScoreController).GetField("_beatmapObjectManager", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -541,6 +542,7 @@ namespace DataRecorder.Models
             this.pauseController = container.TryResolve<PauseController>();
             this.levelEndActions = container.TryResolve<ILevelEndActions>();
             this.multiplayerLocalActivePlayerFacade = container.TryResolve<MultiplayerLocalActivePlayerFacade>();
+            this._beatmapData = container.TryResolve<IReadonlyBeatmapData>();
             this.initializeError = false;
         }
 
@@ -631,8 +633,7 @@ namespace DataRecorder.Models
             if (practiceSettings != null) songSpeedMul = practiceSettings.songSpeedMul;
 
             // HTTPStatus 1.12.1以下との下位互換性のために、NoteDataからidへのマッピングを生成します。 [Generate NoteData to id mappings for backwards compatiblity with <1.12.1]
-            var beatmapObjectsData = beatmapData.GetBeatmapDataItems<NoteData>().ToList();
-            foreach (BeatmapObjectData beatmapObjectData in beatmapObjectsData) {
+            foreach (var beatmapObjectData in this._beatmapData.allBeatmapDataItems.Where(x => x is NoteData || x is SliderData).OrderBy(x => x.time)) {
                 if (beatmapObjectData is NoteData noteData) {
                     //Logger.Debug($"\t{noteData.gameplayType.ToString()}\t{noteData.scoringType.ToString()}\t{noteData.cutDirection}\t{noteData.time}\t{noteData.lineIndex}\t{noteData.noteLineLayer}\t{noteData.colorType}");
                     var mapdata = this._gameStatus.MapDataGet();
