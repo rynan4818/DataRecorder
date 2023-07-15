@@ -1,0 +1,10 @@
+ダウンロード元
+https://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki
+
+Precompiled Statically-Linked Binaries for 64-bit Windows (.NET Framework 4.6)
+
+bundleでない方の
+sqlite-netFx46-static-binary-x64-*.zipを使用する。
+
+参考
+https://aquasoftware.net/blog/?p=469
