@@ -15,9 +15,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>portable</DebugType>
     <LocalRefsDir Condition="Exists('..\Refs')">..\Refs</LocalRefsDir>
-    <RefarencePath>$(LocalRefsDir)</RefarencePath>
-    <BeatSaberDir>
-    </BeatSaberDir>
+    <BeatSaberDir>$(LocalRefsDir)</BeatSaberDir>
     <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
     <!--<PathMap>$(AppOutputBase)=X:\$(AssemblyName)\</PathMap>-->
     <ErrorReport>prompt</ErrorReport>
@@ -33,6 +31,8 @@
     <OutputPath>bin\Release\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="$(DefineConstants.Contains('CIBuild')) OR '$(NCrunch)' == '1'">
     <DisableCopyToPlugins>True</DisableCopyToPlugins>
@@ -139,27 +139,24 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Directory.Build.props" Condition="Exists('Directory.Build.props')" />
-    <None Include="Directory.Build.targets" Condition="Exists('Directory.Build.targets')" />
     <None Include="DataRecorder.csproj.user" Condition="Exists('DataRecorder.csproj.user')" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BeatSaberModdingTools.Tasks">
-      <Version>1.2.3</Version>
+      <Version>2.0.0-beta1</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
   <ItemGroup />
+  <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputCopy Include="$(OutputPath)$(AssemblyName).pdb" OutputPath="Plugins\$(AssemblyName).pdb" />
+  </ItemGroup>
   <ItemGroup>
-    <Content Include="dll\System.Data.SQLite.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="dll\SQLite.Interop.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="dll\System.Data.SQLite.manifest">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <OutputCopy Include="$(OutputPath)$(AssemblyName).dll" OutputPath="Plugins\$(AssemblyName).dll" />
+    <OutputCopy Include="dll\System.Data.SQLite.dll" OutputPath="Libs\System.Data.SQLite.dll" />
+    <OutputCopy Include="dll\SQLite.Interop.dll" OutputPath="Libs\SQLite.Interop.dll" />
+    <OutputCopy Include="dll\System.Data.SQLite.manifest" OutputPath="Plugins\System.Data.SQLite.manifest" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
