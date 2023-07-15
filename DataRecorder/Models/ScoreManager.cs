@@ -13,6 +13,7 @@ using Zenject;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using IPA.Utilities.Async;
 
 namespace DataRecorder.Models
 {
@@ -508,6 +509,7 @@ namespace DataRecorder.Models
         private IReadonlyBeatmapData _beatmapData;
         /// protected readonly BeatmapObjectManager _beatmapObjectManager
         private FieldInfo scoreControllerBeatmapObjectManagerField = typeof(ScoreController).GetField("_beatmapObjectManager", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        private readonly CancellationTokenSource connectionClosed = new CancellationTokenSource();
 
         [Inject]
         private readonly IRepository _repository;
@@ -569,12 +571,10 @@ namespace DataRecorder.Models
 
             // イベントリスナーの登録 (Register event listeners)
             // マルチプレイヤーでは PauseController が存在しない (PauseController doesn't exist in multiplayer)
-            Logger.Info("scoreController=" + this.scoreController);
             if (this.pauseController == null) {
                 this._gameStatus.multiplayer = true;
             }
             else {
-                Logger.Info("pauseController=" + this.pauseController);
                 // public event Action PauseController#didPauseEvent;
                 this.pauseController.didPauseEvent += this.OnGamePause;
                 // public event Action PauseController#didResumeEvent;
@@ -707,7 +707,7 @@ namespace DataRecorder.Models
             this._gameStatus.NoteDataSizeCheck();
             this._gameStatus.EnergyDataSizeCheck();
             this._gameStatus.MapDataSizeCheck();
-            HMMainThreadDispatcher.instance.Enqueue(this.SongStartWait());
+            await UnityMainThreadTaskScheduler.Factory.StartNew(() => this.SongStartWait(), this.connectionClosed.Token);
             Logger.Debug("Initialize end");
         }
 
@@ -724,6 +724,7 @@ namespace DataRecorder.Models
 
                     //各種イベントの削除
                     try {
+                        this.connectionClosed.Cancel();
                         this._repository.playDataAddFlag = true;
 
                         // 終了前にプレイヤーがマップを離れることで解決しないAfterCutScoreBuffersの参照を解放。(Release references for AfterCutScoreBuffers that don't resolve due to player leaving the map before finishing.)
