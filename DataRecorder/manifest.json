@@ -3,13 +3,13 @@
   "id": "DataRecorder",
   "name": "DataRecorder",
   "author": "Rynan",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "",
-  "gameVersion": "1.20.0",
+  "gameVersion": "1.33.0",
   "dependsOn": {
-    "BSIPA": "^4.2.2",
-    "BS Utils": "^1.12.0",
-    "SiraUtil": "^3.0.5",
+    "BSIPA": "^4.3.2",
+    "BS Utils": "^1.13.0",
+    "SiraUtil": "^3.1.6",
     "System.Data.SQLite": "^1.0.115"
   }
 }
