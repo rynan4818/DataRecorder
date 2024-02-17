@@ -460,7 +460,7 @@ namespace DataRecorder.DataBases
             while (true) {
                 if (this.playDataAddFlag) this.PlayDataAdd();
                 if (this.pauseEventAddFlag != null) this.PauseEventAdd(this.pauseEventAddFlag);
-                Thread.Sleep(1);
+                Thread.Sleep(10);
             }
         }
 

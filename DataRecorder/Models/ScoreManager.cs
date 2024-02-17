@@ -5,15 +5,12 @@ using BS_Utils.Gameplay;
 using IPA.Utilities;
 using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using UnityEngine;
 using Zenject;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using IPA.Utilities.Async;
 
 namespace DataRecorder.Models
 {
@@ -461,9 +458,22 @@ namespace DataRecorder.Models
         /// 曲スタートまでstart更新を待機
         /// </summary>
         /// <returns></returns>
-        private IEnumerator SongStartWait()
+        private async Task SongStartWait()
         {
-            yield return new WaitWhile(() => this.audioTimeSyncController.songTime > this.audioTimeSyncController.songTime);
+            var songTime = this.audioTimeSyncController.songTime;
+            var token = connectionClosed.Token;
+            try
+            {
+                while (this.audioTimeSyncController.songTime <= songTime)
+                {
+                    token.ThrowIfCancellationRequested();
+                    await Task.Delay(10);
+                }
+            }
+            catch (Exception)
+            {
+                return;
+            }
             PracticeSettings practiceSettings = this.gameplayCoreSceneSetupData.practiceSettings;
             float songSpeedMul = this.gameplayCoreSceneSetupData.gameplayModifiers.songSpeedMul;
             this._gameStatus.start = Utility.GetCurrentTime() - (long)(this.audioTimeSyncController.songTime * 1000f / songSpeedMul);
@@ -707,7 +717,7 @@ namespace DataRecorder.Models
             this._gameStatus.NoteDataSizeCheck();
             this._gameStatus.EnergyDataSizeCheck();
             this._gameStatus.MapDataSizeCheck();
-            await UnityMainThreadTaskScheduler.Factory.StartNew(() => this.SongStartWait(), this.connectionClosed.Token);
+            await this.SongStartWait();
             Logger.Debug("Initialize end");
         }
 
