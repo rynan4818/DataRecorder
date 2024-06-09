@@ -3,12 +3,6 @@ using IPA;
 using IPA.Config;
 using IPA.Config.Stores;
 using SiraUtil.Zenject;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using UnityEngine.SceneManagement;
 using IPALogger = IPA.Logging.Logger;
 
 namespace DataRecorder
@@ -45,6 +39,7 @@ namespace DataRecorder
             Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
             Log.Debug("Config loaded");
             zenjector.Install<DataRecorderAppInstaller>(Location.App);
+            zenjector.Install<DataRecorderMenuInstaller>(Location.Menu);
             zenjector.Install<DataRecorderGameInstaller>(Location.Player);
         }
         

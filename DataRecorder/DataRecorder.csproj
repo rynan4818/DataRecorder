@@ -57,14 +57,14 @@
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGLib.UnityExtension.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="BGNet, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="BGNetCore, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <Private>False</Private>
-      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGNet.dll</HintPath>
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGNetCore.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="BS_Utils, Version=1.6.5.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="DataModels, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <Private>False</Private>
-      <HintPath>$(BeatSaberDir)\Plugins\BS_Utils.dll</HintPath>
+      <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\DataModels.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="GameplayCore, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -132,9 +132,11 @@
     <Compile Include="Enums\DataRecorderEnum.cs" />
     <Compile Include="Installers\DataRecorderAppInstaller.cs" />
     <Compile Include="Installers\DataRecorderGameInstaller.cs" />
+    <Compile Include="Installers\DataRecorderMenuInstaller.cs" />
     <Compile Include="Interfaces\IRepository.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Models\EnergyDataEntity.cs" />
+    <Compile Include="Models\Gamemode.cs" />
     <Compile Include="Models\GameStatus.cs" />
     <Compile Include="Models\MapDataEntity.cs" />
     <Compile Include="Models\NoteDataEntity.cs" />
@@ -158,7 +160,9 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
   <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
     <OutputCopy Include="$(OutputPath)$(AssemblyName).pdb" OutputPath="Plugins\$(AssemblyName).pdb" />
   </ItemGroup>

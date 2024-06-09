@@ -1,16 +1,15 @@
 ﻿using DataRecorder.Interfaces;
 using DataRecorder.Util;
 using DataRecorder.Enums;
-using BS_Utils.Gameplay;
 using IPA.Utilities;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using Zenject;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using SiraUtil.Zenject;
 
 namespace DataRecorder.Models
 {
@@ -18,7 +17,7 @@ namespace DataRecorder.Models
     /// ゲーム中のスコアを記録するクラスです。
     /// 初期化と破棄はZenjectがいい感じにやってくれます。
     /// </summary>
-    public class ScoreManager : IInitializable, IDisposable, ICutScoreBufferDidFinishReceiver
+    public class ScoreManager : IAsyncInitializable, IDisposable, ICutScoreBufferDidFinishReceiver
     {
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // プロパティ
@@ -286,7 +285,7 @@ namespace DataRecorder.Models
         {
             this._gameStatus.combo = combo;
             // public int ComboController#maxCombo
-            this._gameStatus.maxCombo = comboController.maxCombo;
+            this._gameStatus.maxCombo = (this._comboController as ComboController).maxCombo;
         }
 
         /// <summary>
@@ -312,7 +311,7 @@ namespace DataRecorder.Models
         public void OnEnergyDidChange(float energy)
         {
             if (this._gameStatus.softFailed == false) {
-                this._gameStatus.batteryEnergy = gameEnergyCounter.batteryEnergy;
+                this._gameStatus.batteryEnergy = _gameEnergyCounter.batteryEnergy;
                 this._gameStatus.energy = energy;
 
                 var energyData = this._gameStatus.EnergyDataGet();
@@ -435,9 +434,9 @@ namespace DataRecorder.Models
         /// </summary>
         private void UpdateModMultiplier()
         {
-            this._gameStatus.modifierMultiplier = this.gameplayModifiersSO.GetTotalMultiplier(this.gameplayModifiersSO.CreateModifierParamsList(this.gameplayModifiers), this.gameEnergyCounter.energy);
-            this._gameStatus.maxScore = this.scoreController.immediateMaxPossibleModifiedScore;
-            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(this.gameplayModifiers, this.gameplayModifiersSO, this.gameEnergyCounter.energy);
+            this._gameStatus.modifierMultiplier = this._gameplayModifiersSO.GetTotalMultiplier(this._gameplayModifiersSO.CreateModifierParamsList(this._gameplayModifiers), this._gameEnergyCounter.energy);
+            this._gameStatus.maxScore = this._scoreController.immediateMaxPossibleModifiedScore;
+            this._gameStatus.maxRank = RankModelHelper.MaxRankForGameplayModifiers(this._gameplayModifiers, this._gameplayModifiersSO, this._gameEnergyCounter.energy);
         }
 
         /// <summary>
@@ -449,9 +448,9 @@ namespace DataRecorder.Models
 
             // TODO: test
             // int currentMaxScoreBeforeMultiplier = ScoreModel.MaxRawScoreForNumberOfNotes(gameStatus.passedNotes);
-            gameStatus.currentMaxScore = this.scoreController.immediateMaxPossibleModifiedScore; // gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModiferParamsList, gameplayModifiersSO, gameEnergyCounter.energy);
+            gameStatus.currentMaxScore = this._scoreController.immediateMaxPossibleModifiedScore; // gameplayModifiersSO.MaxModifiedScoreForMaxRawScore(currentMaxScoreBeforeMultiplier, gameplayModiferParamsList, gameplayModifiersSO, gameEnergyCounter.energy);
 
-            gameStatus.rank = RankModel.GetRankForScore(gameStatus.rawScore, gameStatus.score, this.scoreController.immediateMaxPossibleMultipliedScore, gameStatus.currentMaxScore);
+            gameStatus.rank = RankModel.GetRankForScore(gameStatus.rawScore, gameStatus.score, this._scoreController.immediateMaxPossibleMultipliedScore, gameStatus.currentMaxScore);
         }
 
         /// <summary>
@@ -460,11 +459,11 @@ namespace DataRecorder.Models
         /// <returns></returns>
         private async Task SongStartWait()
         {
-            var songTime = this.audioTimeSyncController.songTime;
+            var songTime = this._audioTimeSource.songTime;
             var token = connectionClosed.Token;
             try
             {
-                while (this.audioTimeSyncController.songTime <= songTime)
+                while (this._audioTimeSource.songTime <= songTime)
                 {
                     token.ThrowIfCancellationRequested();
                     await Task.Delay(10);
@@ -474,10 +473,11 @@ namespace DataRecorder.Models
             {
                 return;
             }
-            PracticeSettings practiceSettings = this.gameplayCoreSceneSetupData.practiceSettings;
-            float songSpeedMul = this.gameplayCoreSceneSetupData.gameplayModifiers.songSpeedMul;
-            this._gameStatus.start = Utility.GetCurrentTime() - (long)(this.audioTimeSyncController.songTime * 1000f / songSpeedMul);
-            if (practiceSettings != null) this._gameStatus.start -= (long)(practiceSettings.startSongTime * 1000f / songSpeedMul);
+            PracticeSettings practiceSettings = this._gameplayCoreSceneSetupData.practiceSettings;
+            float songSpeedMul = this._gameplayCoreSceneSetupData.gameplayModifiers.songSpeedMul;
+            this._gameStatus.start = Utility.GetCurrentTime() - (long)(this._audioTimeSource.songTime * 1000f / songSpeedMul);
+            if (practiceSettings != null)
+                this._gameStatus.start -= (long)(practiceSettings.startSongTime * 1000f / songSpeedMul);
             Logger.Debug("Song Start");
         }
 
@@ -504,71 +504,62 @@ namespace DataRecorder.Models
         private bool disposedValue;
         private bool initializeError;
 
-        private GameplayCoreSceneSetupData gameplayCoreSceneSetupData;
-        private PauseController pauseController;
-        private ScoreController scoreController;
-        private ComboController comboController;
-        private BeatmapObjectManager beatmapObjectManager;
-        private GameplayModifiers gameplayModifiers;
-        private AudioTimeSyncController audioTimeSyncController;
-        private GameEnergyCounter gameEnergyCounter;
-        private MultiplayerLocalActivePlayerFacade multiplayerLocalActivePlayerFacade;
-        private ILevelEndActions levelEndActions;
+        private GameplayCoreSceneSetupData _gameplayCoreSceneSetupData;
+        private BeatmapLevel _beatmapLevel;
+        private BeatmapKey _beatmapKey;
+        private PauseController _pauseController;
+        private IScoreController _scoreController;
+        private IComboController _comboController;
+        private GameplayModifiers _gameplayModifiers;
+        private IAudioTimeSource _audioTimeSource;
+        private GameEnergyCounter _gameEnergyCounter;
+        private MultiplayerLocalActivePlayerFacade _multiplayerLocalActivePlayerFacade;
+        private ILevelEndActions _levelEndActions;
         private readonly Dictionary<IReadonlyCutScoreBuffer, NoteFullyCutData> noteCutMapping = new Dictionary<IReadonlyCutScoreBuffer, NoteFullyCutData>();
-        private GameplayModifiersModelSO gameplayModifiersSO;
+        private GameplayModifiersModelSO _gameplayModifiersSO;
         private IReadonlyBeatmapData _beatmapData;
-        /// protected readonly BeatmapObjectManager _beatmapObjectManager
-        private FieldInfo scoreControllerBeatmapObjectManagerField = typeof(ScoreController).GetField("_beatmapObjectManager", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        private BeatmapObjectManager _beatmapObjectManager;
         private readonly CancellationTokenSource connectionClosed = new CancellationTokenSource();
-
-        [Inject]
         private readonly IRepository _repository;
-        [Inject]
         private readonly GameStatus _gameStatus;
         #endregion
         //ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*ﾟ+｡｡+ﾟ*｡+ﾟ ﾟ+｡*
         #region // 構築・破棄
-        /// <summary>
-        /// Zenjetにより最初に呼ばれる関数です。
-        /// </summary>
-        /// <param name="container"></param>
-        [Inject]
-        private void Constractor(DiContainer container)
+        private ScoreManager(
+            IRepository repository,
+            GameStatus gameStatus,
+            GameplayCoreSceneSetupData gameplayCoreSceneSetupData,
+            BeatmapLevel beatmapLevel,
+            BeatmapKey beatmapKey,
+            GameplayModifiers gameplayModifiers,
+            IAudioTimeSource audioTimeSource,
+            IComboController comboController,
+            GameEnergyCounter gameEnergyCounter,
+            BeatmapObjectManager beatmapObjectManager,
+            IReadonlyBeatmapData readonlyBeatmapData,
+            IScoreController score,
+            DiContainer container)
         {
-            Logger.Debug("Constractor call");
-            this.initializeError = true;
-            try {
-                this.gameplayCoreSceneSetupData = container.Resolve<GameplayCoreSceneSetupData>();
-                this.scoreController = container.Resolve<ScoreController>();
-                this.gameplayModifiers = container.Resolve<GameplayModifiers>();
-                this.audioTimeSyncController = container.Resolve<AudioTimeSyncController>();
-                this.gameEnergyCounter = container.Resolve<GameEnergyCounter>();
-                this.comboController = container.Resolve<ComboController>();
-                this.gameplayModifiersSO = this.scoreController.GetField<GameplayModifiersModelSO, ScoreController>("_gameplayModifiersModel");
-            }
-            catch (Exception e) {
-                Logger.Error(e);
-                return;
-            }
-            this.beatmapObjectManager = (BeatmapObjectManager)scoreControllerBeatmapObjectManagerField.GetValue(this.scoreController);
-            this.pauseController = container.TryResolve<PauseController>();
-            this.levelEndActions = container.TryResolve<ILevelEndActions>();
-            this.multiplayerLocalActivePlayerFacade = container.TryResolve<MultiplayerLocalActivePlayerFacade>();
-            this._beatmapData = container.TryResolve<IReadonlyBeatmapData>();
-            this.initializeError = false;
+            this._repository = repository;
+            this._gameStatus = gameStatus;
+            this._gameplayCoreSceneSetupData = gameplayCoreSceneSetupData;
+            this._beatmapLevel = beatmapLevel;
+            this._beatmapKey = beatmapKey;
+            this._gameplayModifiers = gameplayModifiers;
+            this._audioTimeSource = audioTimeSource;
+            this._comboController = comboController;
+            this._gameEnergyCounter = gameEnergyCounter;
+            this._beatmapObjectManager = beatmapObjectManager;
+            this._beatmapData = readonlyBeatmapData;
+            this._scoreController = score;
+            if (this._scoreController is ScoreController scoreController)
+                this._gameplayModifiersSO = scoreController.GetField<GameplayModifiersModelSO, ScoreController>("_gameplayModifiersModel");
+            this._pauseController = container.TryResolve<PauseController>();
+            this._levelEndActions = container.TryResolve<ILevelEndActions>();
+            this._multiplayerLocalActivePlayerFacade = container.TryResolve<MultiplayerLocalActivePlayerFacade>();
         }
-
-        /// <summary>
-        /// Zenjectにより<see cref="Constractor(DiContainer)"/>のあとに呼ばれる関数です。
-        /// </summary>
-        public void Initialize()
+        public async Task InitializeAsync(CancellationToken token)
         {
-            _ = this.InitializeAsync();
-        }
-
-        public async Task InitializeAsync()
-        {
-            if (this.initializeError) return;
             //初期化処理
             while (this._repository.playDataAddFlag) {
                 Thread.Sleep(1);
@@ -581,66 +572,52 @@ namespace DataRecorder.Models
 
             // イベントリスナーの登録 (Register event listeners)
             // マルチプレイヤーでは PauseController が存在しない (PauseController doesn't exist in multiplayer)
-            if (this.pauseController == null) {
-                this._gameStatus.multiplayer = true;
-            }
-            else {
+            if (this._pauseController != null) {
                 // public event Action PauseController#didPauseEvent;
-                this.pauseController.didPauseEvent += this.OnGamePause;
+                this._pauseController.didPauseEvent += this.OnGamePause;
                 // public event Action PauseController#didResumeEvent;
-                this.pauseController.didResumeEvent += this.OnGameResume;
+                this._pauseController.didResumeEvent += this.OnGameResume;
             }
             // public event Action<int scoreBeforeMultiplier, int scoreAfterMultiplier> ScoreController#scoreDidChangeEvent
-            this.scoreController.scoreDidChangeEvent += this.OnScoreDidChange;
+            this._scoreController.scoreDidChangeEvent += this.OnScoreDidChange;
             // public event Action<ScoringElement> ScoreController#scoringForNoteStartedEvent
-            this.scoreController.scoringForNoteStartedEvent += this.OnScoringForNoteStarted;
+            this._scoreController.scoringForNoteStartedEvent += this.OnScoringForNoteStarted;
             // public event Action<int multiplier, float progress [0..1]> ScoreController#multiplierDidChangeEvent
-            this.scoreController.multiplierDidChangeEvent += this.OnMultiplierDidChange;
+            this._scoreController.multiplierDidChangeEvent += this.OnMultiplierDidChange;
 
             // public event Action<int combo> ComboController#comboDidChangeEvent
-            this.comboController.comboDidChangeEvent += this.OnComboDidChange;
+            this._comboController.comboDidChangeEvent += this.OnComboDidChange;
 
             // public event NoteWasCutDelegate<NoteController, in NoteCutInfo> BeatmapObjectManager#noteWasCutEvent
-            this.beatmapObjectManager.noteWasCutEvent += this.OnNoteWasCut;
+            this._beatmapObjectManager.noteWasCutEvent += this.OnNoteWasCut;
             // public event Action<NoteController> BeatmapObjectManager#noteWasMissedEvent
-            this.beatmapObjectManager.noteWasMissedEvent += this.OnNoteWasMissed;
+            this._beatmapObjectManager.noteWasMissedEvent += this.OnNoteWasMissed;
 
             // public event Action GameEnergyCounter#gameEnergyDidReach0Event;
-            this.gameEnergyCounter.gameEnergyDidReach0Event += this.OnEnergyDidReach0Event;
+            this._gameEnergyCounter.gameEnergyDidReach0Event += this.OnEnergyDidReach0Event;
             // public GameEnergyCounter#gameEnergyDidChangeEvent<float> // energy
-            this.gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
+            this._gameEnergyCounter.gameEnergyDidChangeEvent += this.OnEnergyDidChange;
 
-            if (this.multiplayerLocalActivePlayerFacade != null) {
-                this.multiplayerLocalActivePlayerFacade.playerDidFinishEvent += this.OnMultiplayerLevelFinished;
-                this._gameStatus.multiplayer = true;
+            if (this._multiplayerLocalActivePlayerFacade != null) {
+                this._multiplayerLocalActivePlayerFacade.playerDidFinishEvent += this.OnMultiplayerLevelFinished;
             }
-            if (this.levelEndActions != null) {
-                this.levelEndActions.levelFinishedEvent += this.OnLevelFinished;
-                this.levelEndActions.levelFailedEvent += this.OnLevelFailed;
+            if (this._levelEndActions != null) {
+                this._levelEndActions.levelFinishedEvent += this.OnLevelFinished;
+                this._levelEndActions.levelFailedEvent += this.OnLevelFailed;
             }
             //BeatMapデータの登録
             this._gameStatus.scene = BeatSaberScene.Song;
+            var level = this._beatmapLevel;
+            var beatmapData = level.GetDifficultyBeatmapData(this._beatmapKey.beatmapCharacteristic, this._beatmapKey.difficulty);
 
-            IDifficultyBeatmap diff = this.gameplayCoreSceneSetupData.difficultyBeatmap;
-            IBeatmapLevel level = diff.level;
+            this._gameStatus.mode = this._beatmapKey.beatmapCharacteristic.serializedName;
+            this._gameplayModifiers = this._gameplayCoreSceneSetupData.gameplayModifiers;
+            var playerSettings = this._gameplayCoreSceneSetupData.playerSpecificSettings;
+            var practiceSettings = this._gameplayCoreSceneSetupData.practiceSettings;
 
-            // Load the beatmap data if it hasn't been loaded already
-            if (gameplayCoreSceneSetupData.transformedBeatmapData == null)
-            {
-                await gameplayCoreSceneSetupData.LoadTransformedBeatmapDataAsync();
-            }
-
-            var beatmapData = gameplayCoreSceneSetupData.transformedBeatmapData;
-
-            this._gameStatus.partyMode = Gamemode.IsPartyActive;
-            this._gameStatus.mode = BS_Utils.Plugin.LevelData.GameplayCoreSceneSetupData.difficultyBeatmap.parentDifficultyBeatmapSet.beatmapCharacteristic.serializedName;
-
-            this.gameplayModifiers = this.gameplayCoreSceneSetupData.gameplayModifiers;
-            PlayerSpecificSettings playerSettings = this.gameplayCoreSceneSetupData.playerSpecificSettings;
-            PracticeSettings practiceSettings = this.gameplayCoreSceneSetupData.practiceSettings;
-
-            float songSpeedMul = this.gameplayModifiers.songSpeedMul;
-            if (practiceSettings != null) songSpeedMul = practiceSettings.songSpeedMul;
+            float songSpeedMul = this._gameplayModifiers.songSpeedMul;
+            if (practiceSettings != null)
+                songSpeedMul = practiceSettings.songSpeedMul;
 
             // HTTPStatus 1.12.1以下との下位互換性のために、NoteDataからidへのマッピングを生成します。 [Generate NoteData to id mappings for backwards compatiblity with <1.12.1]
             foreach (var beatmapObjectData in this._beatmapData.allBeatmapDataItems.Where(x => x is NoteData || x is SliderData).OrderBy(x => x.time)) {
@@ -659,43 +636,43 @@ namespace DataRecorder.Models
             this._gameStatus.songName = level.songName;
             this._gameStatus.songSubName = level.songSubName;
             this._gameStatus.songAuthorName = level.songAuthorName;
-            this._gameStatus.levelAuthorName = level.levelAuthorName;
+            this._gameStatus.levelAuthorName = string.Join(",", level.allMappers);
             this._gameStatus.songBPM = level.beatsPerMinute;
-            this._gameStatus.noteJumpSpeed = diff.noteJumpMovementSpeed;
+            this._gameStatus.noteJumpSpeed = beatmapData.noteJumpMovementSpeed;
             // 13は "custom_level_"、40はSHA-1ハッシュの長さを表すマジックナンバー
             this._gameStatus.songHash = Regex.IsMatch(level.levelID, "^custom_level_[0-9A-F]{40}", RegexOptions.IgnoreCase) && !level.levelID.EndsWith(" WIP") ? level.levelID.Substring(13, 40) : null;
             this._gameStatus.levelId = level.levelID;
             this._gameStatus.songTimeOffset = (long)(level.songTimeOffset * 1000f / songSpeedMul);
-            this._gameStatus.length = (long)(level.beatmapLevelData.audioClip.length * 1000f / songSpeedMul);
+            this._gameStatus.length = (long)(this._gameplayCoreSceneSetupData.songAudioClip.length * 1000f / songSpeedMul);
             this._gameStatus.paused = 0;
-            this._gameStatus.difficulty = diff.difficulty.Name();
-            this._gameStatus.notesCount = beatmapData.cuttableNotesCount;
+            this._gameStatus.difficulty = this._beatmapKey.difficulty.Name();
+            this._gameStatus.notesCount = beatmapData.notesCount;
             this._gameStatus.bombsCount = beatmapData.bombsCount;
             this._gameStatus.obstaclesCount = beatmapData.obstaclesCount;
-            this._gameStatus.environmentName = level.environmentInfo.sceneInfo.sceneName;
+            this._gameStatus.environmentName = beatmapData.environmentName.ToString();
 
             this.UpdateModMultiplier();
 
             this._gameStatus.songSpeedMultiplier = songSpeedMul;
-            this._gameStatus.batteryLives = this.gameEnergyCounter.batteryLives;
+            this._gameStatus.batteryLives = this._gameEnergyCounter.batteryLives;
 
-            this._gameStatus.modObstacles = this.gameplayModifiers.enabledObstacleType;
-            this._gameStatus.modInstaFail = this.gameplayModifiers.instaFail;
-            this._gameStatus.modNoFail = this.gameplayModifiers.noFailOn0Energy;
-            this._gameStatus.modBatteryEnergy = this.gameplayModifiers.energyType == GameplayModifiers.EnergyType.Battery;
-            this._gameStatus.modDisappearingArrows = this.gameplayModifiers.disappearingArrows;
-            this._gameStatus.modNoBombs = this.gameplayModifiers.noBombs;
-            this._gameStatus.modSongSpeed = this.gameplayModifiers.songSpeed;
-            this._gameStatus.modNoArrows = this.gameplayModifiers.noArrows;
-            this._gameStatus.modGhostNotes = this.gameplayModifiers.ghostNotes;
-            this._gameStatus.modFailOnSaberClash = this.gameplayModifiers.failOnSaberClash;
-            this._gameStatus.modStrictAngles = this.gameplayModifiers.strictAngles;
-            this._gameStatus.modFastNotes = this.gameplayModifiers.fastNotes;
-            this._gameStatus.modSmallNotes = this.gameplayModifiers.smallCubes;
-            this._gameStatus.modProMode = this.gameplayModifiers.proMode;
-            this._gameStatus.modZenMode = this.gameplayModifiers.zenMode;
+            this._gameStatus.modObstacles = this._gameplayModifiers.enabledObstacleType;
+            this._gameStatus.modInstaFail = this._gameplayModifiers.instaFail;
+            this._gameStatus.modNoFail = this._gameplayModifiers.noFailOn0Energy;
+            this._gameStatus.modBatteryEnergy = this._gameplayModifiers.energyType == GameplayModifiers.EnergyType.Battery;
+            this._gameStatus.modDisappearingArrows = this._gameplayModifiers.disappearingArrows;
+            this._gameStatus.modNoBombs = this._gameplayModifiers.noBombs;
+            this._gameStatus.modSongSpeed = this._gameplayModifiers.songSpeed;
+            this._gameStatus.modNoArrows = this._gameplayModifiers.noArrows;
+            this._gameStatus.modGhostNotes = this._gameplayModifiers.ghostNotes;
+            this._gameStatus.modFailOnSaberClash = this._gameplayModifiers.failOnSaberClash;
+            this._gameStatus.modStrictAngles = this._gameplayModifiers.strictAngles;
+            this._gameStatus.modFastNotes = this._gameplayModifiers.fastNotes;
+            this._gameStatus.modSmallNotes = this._gameplayModifiers.smallCubes;
+            this._gameStatus.modProMode = this._gameplayModifiers.proMode;
+            this._gameStatus.modZenMode = this._gameplayModifiers.zenMode;
 
-            if (diff.difficulty == BeatmapDifficulty.ExpertPlus) {
+            if (this._beatmapKey.difficulty == BeatmapDifficulty.ExpertPlus) {
                 this._gameStatus.staticLights = playerSettings.environmentEffectsFilterExpertPlusPreset != EnvironmentEffectsFilterPreset.AllEffects;
                 this._gameStatus.environmentEffects = playerSettings.environmentEffectsFilterExpertPlusPreset;
             }
@@ -745,44 +722,44 @@ namespace DataRecorder.Models
                         }
                         this.noteCutMapping?.Clear();
 
-                        if (this.pauseController != null) {
-                            this.pauseController.didPauseEvent -= this.OnGamePause;
-                            this.pauseController.didResumeEvent -= this.OnGameResume;
+                        if (this._pauseController != null) {
+                            this._pauseController.didPauseEvent -= this.OnGamePause;
+                            this._pauseController.didResumeEvent -= this.OnGameResume;
                         }
 
-                        if (this.scoreController != null) {
-                            this.scoreController.scoreDidChangeEvent -= this.OnScoreDidChange;
-                            this.scoreController.scoringForNoteStartedEvent -= this.OnScoringForNoteStarted;
-                            this.scoreController.multiplierDidChangeEvent -= this.OnMultiplierDidChange;
+                        if (this._scoreController != null) {
+                            this._scoreController.scoreDidChangeEvent -= this.OnScoreDidChange;
+                            this._scoreController.scoringForNoteStartedEvent -= this.OnScoringForNoteStarted;
+                            this._scoreController.multiplierDidChangeEvent -= this.OnMultiplierDidChange;
                         }
 
-                        if (comboController != null)
+                        if (_comboController != null)
                         {
-                            this.comboController.comboDidChangeEvent -= this.OnComboDidChange;
-                            this.comboController = null;
+                            this._comboController.comboDidChangeEvent -= this.OnComboDidChange;
+                            this._comboController = null;
                         }
 
-                        if (beatmapObjectManager != null)
+                        if (_beatmapObjectManager != null)
                         {
-                            this.beatmapObjectManager.noteWasCutEvent -= this.OnNoteWasCut;
-                            this.beatmapObjectManager.noteWasMissedEvent -= this.OnNoteWasMissed;
-                            this.beatmapObjectManager = null;
+                            this._beatmapObjectManager.noteWasCutEvent -= this.OnNoteWasCut;
+                            this._beatmapObjectManager.noteWasMissedEvent -= this.OnNoteWasMissed;
+                            this._beatmapObjectManager = null;
                         }
 
-                        if (this.multiplayerLocalActivePlayerFacade != null) {
-                            this.multiplayerLocalActivePlayerFacade.playerDidFinishEvent -= this.OnMultiplayerLevelFinished;
-                            this.multiplayerLocalActivePlayerFacade = null;
+                        if (this._multiplayerLocalActivePlayerFacade != null) {
+                            this._multiplayerLocalActivePlayerFacade.playerDidFinishEvent -= this.OnMultiplayerLevelFinished;
+                            this._multiplayerLocalActivePlayerFacade = null;
                         }
 
-                        if (this.levelEndActions != null) {
-                            this.levelEndActions.levelFinishedEvent -= this.OnLevelFinished;
-                            this.levelEndActions.levelFailedEvent -= this.OnLevelFailed;
+                        if (this._levelEndActions != null) {
+                            this._levelEndActions.levelFinishedEvent -= this.OnLevelFinished;
+                            this._levelEndActions.levelFailedEvent -= this.OnLevelFailed;
                         }
                         //CleanUpMultiplayer();
 
-                        if (this.gameEnergyCounter != null) {
-                            this.gameEnergyCounter.gameEnergyDidChangeEvent -= this.OnEnergyDidChange;
-                            this.gameEnergyCounter.gameEnergyDidReach0Event -= this.OnEnergyDidReach0Event;
+                        if (this._gameEnergyCounter != null) {
+                            this._gameEnergyCounter.gameEnergyDidChangeEvent -= this.OnEnergyDidChange;
+                            this._gameEnergyCounter.gameEnergyDidReach0Event -= this.OnEnergyDidReach0Event;
                         }
 
                     }

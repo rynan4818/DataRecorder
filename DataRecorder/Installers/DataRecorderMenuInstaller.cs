@@ -3,11 +3,11 @@ using Zenject;
 
 namespace DataRecorder.Installers
 {
-    public class DataRecorderGameInstaller : Installer
+    public class DataRecorderMenuInstaller : Installer
     {
         public override void InstallBindings()
         {
-            this.Container.BindInterfacesAndSelfTo<ScoreManager>().AsCached().NonLazy();
+            this.Container.BindInterfacesAndSelfTo<Gamemode>().AsCached().NonLazy();
         }
     }
 }
