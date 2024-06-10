@@ -1,14 +1,10 @@
 ﻿using DataRecorder.DataBases;
 using DataRecorder.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Zenject;
 
 namespace DataRecorder.Installers
 {
-    public class DataRecorderAppInstaller : Zenject.Installer
+    public class DataRecorderAppInstaller : Installer
     {
         public override void InstallBindings()
         {

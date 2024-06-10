@@ -52,11 +52,6 @@
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\BGNet.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="BS_Utils, Version=1.6.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <Private>False</Private>
-      <HintPath>$(BeatSaberDir)\Plugins\BS_Utils.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-    </Reference>
     <Reference Include="GameplayCore, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <Private>False</Private>
       <HintPath>$(BeatSaberDir)\Beat Saber_Data\Managed\GameplayCore.dll</HintPath>
@@ -122,9 +117,11 @@
     <Compile Include="Enums\DataRecorderEnum.cs" />
     <Compile Include="Installers\DataRecorderAppInstaller.cs" />
     <Compile Include="Installers\DataRecorderGameInstaller.cs" />
+    <Compile Include="Installers\DataRecorderMenuInstaller.cs" />
     <Compile Include="Interfaces\IRepository.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Models\EnergyDataEntity.cs" />
+    <Compile Include="Models\Gamemode.cs" />
     <Compile Include="Models\GameStatus.cs" />
     <Compile Include="Models\MapDataEntity.cs" />
     <Compile Include="Models\NoteDataEntity.cs" />

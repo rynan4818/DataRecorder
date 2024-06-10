@@ -84,6 +84,11 @@ namespace DataRecorder.Models
         public bool partyMode { get; set; } = false;
 
         /// <summary>
+        /// StatusObject[Game] mode : Campaignモード
+        /// </summary>
+        public bool campaign { get; set; } = false;
+
+        /// <summary>
         /// StatusObject[Game] mode : ゲームモード
         /// </summary>
         public string mode { get; set; } = null;
@@ -637,8 +642,6 @@ namespace DataRecorder.Models
             this.cleared = null;
             this.endFlag = 0;
             this.pauseCount = 0;
-            this.multiplayer = false;
-            this.partyMode = false;
             this.mode = null;
             this.scene = null;
             this.songName = null;
