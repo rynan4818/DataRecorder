@@ -505,8 +505,6 @@ namespace DataRecorder.Models
         private bool initializeError;
 
         private GameplayCoreSceneSetupData _gameplayCoreSceneSetupData;
-        private BeatmapLevel _beatmapLevel;
-        private BeatmapKey _beatmapKey;
         private PauseController _pauseController;
         private IScoreController _scoreController;
         private IComboController _comboController;
@@ -529,8 +527,6 @@ namespace DataRecorder.Models
             IRepository repository,
             GameStatus gameStatus,
             GameplayCoreSceneSetupData gameplayCoreSceneSetupData,
-            BeatmapLevel beatmapLevel,
-            BeatmapKey beatmapKey,
             GameplayModifiers gameplayModifiers,
             IAudioTimeSource audioTimeSource,
             IComboController comboController,
@@ -543,8 +539,6 @@ namespace DataRecorder.Models
             this._repository = repository;
             this._gameStatus = gameStatus;
             this._gameplayCoreSceneSetupData = gameplayCoreSceneSetupData;
-            this._beatmapLevel = beatmapLevel;
-            this._beatmapKey = beatmapKey;
             this._gameplayModifiers = gameplayModifiers;
             this._audioTimeSource = audioTimeSource;
             this._comboController = comboController;
@@ -607,10 +601,11 @@ namespace DataRecorder.Models
             }
             //BeatMapデータの登録
             this._gameStatus.scene = BeatSaberScene.Song;
-            var level = this._beatmapLevel;
-            var beatmapData = level.GetDifficultyBeatmapData(this._beatmapKey.beatmapCharacteristic, this._beatmapKey.difficulty);
+            var beatmapKey = this._gameplayCoreSceneSetupData.beatmapKey;
+            var level = this._gameplayCoreSceneSetupData.beatmapLevel;
+            var beatmapData = level.GetDifficultyBeatmapData(beatmapKey.beatmapCharacteristic, beatmapKey.difficulty);
 
-            this._gameStatus.mode = this._beatmapKey.beatmapCharacteristic.serializedName;
+            this._gameStatus.mode = beatmapKey.beatmapCharacteristic.serializedName;
             this._gameplayModifiers = this._gameplayCoreSceneSetupData.gameplayModifiers;
             var playerSettings = this._gameplayCoreSceneSetupData.playerSpecificSettings;
             var practiceSettings = this._gameplayCoreSceneSetupData.practiceSettings;
@@ -645,7 +640,7 @@ namespace DataRecorder.Models
             this._gameStatus.songTimeOffset = (long)(level.songTimeOffset * 1000f / songSpeedMul);
             this._gameStatus.length = (long)(this._gameplayCoreSceneSetupData.songAudioClip.length * 1000f / songSpeedMul);
             this._gameStatus.paused = 0;
-            this._gameStatus.difficulty = this._beatmapKey.difficulty.Name();
+            this._gameStatus.difficulty = beatmapKey.difficulty.Name();
             this._gameStatus.notesCount = beatmapData.notesCount;
             this._gameStatus.bombsCount = beatmapData.bombsCount;
             this._gameStatus.obstaclesCount = beatmapData.obstaclesCount;
@@ -672,7 +667,7 @@ namespace DataRecorder.Models
             this._gameStatus.modProMode = this._gameplayModifiers.proMode;
             this._gameStatus.modZenMode = this._gameplayModifiers.zenMode;
 
-            if (this._beatmapKey.difficulty == BeatmapDifficulty.ExpertPlus) {
+            if (beatmapKey.difficulty == BeatmapDifficulty.ExpertPlus) {
                 this._gameStatus.staticLights = playerSettings.environmentEffectsFilterExpertPlusPreset != EnvironmentEffectsFilterPreset.AllEffects;
                 this._gameStatus.environmentEffects = playerSettings.environmentEffectsFilterExpertPlusPreset;
             }
