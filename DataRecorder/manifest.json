@@ -3,7 +3,7 @@
   "id": "DataRecorder",
   "name": "DataRecorder",
   "author": "Rynan",
-  "version": "0.7.6",
+  "version": "0.7.7",
   "description": "",
   "gameVersion": "1.35.0",
   "dependsOn": {
