@@ -150,7 +150,7 @@ namespace DataRecorder.Models
                 gameStatus.hitNotes++;
                 UpdateCurrentMaxScore();
 
-                if (noteData.scoringType == NoteData.ScoringType.BurstSliderElement)
+                if (noteData.gameplayType == NoteData.GameplayType.BurstSliderElement)
                 {
                     this.SetNoteDataStatus(noteData);
                     this.SetNoteCutStatus(noteCutInfo, noteData, cutScoreBuffer, true);
@@ -390,7 +390,7 @@ namespace DataRecorder.Models
 
             // Backwards compatibility for <1.12.1
             notescore.noteTime = noteData.time;
-            notescore.scoringType = noteData.scoringType;
+            notescore.gameplayType = noteData.gameplayType;
             notescore.colorType = noteData.colorType;
             notescore.noteCutDirection = noteData.cutDirection;
             notescore.noteLine = noteData.lineIndex;
@@ -615,7 +615,7 @@ namespace DataRecorder.Models
                 songSpeedMul = practiceSettings.songSpeedMul;
 
             // HTTPStatus 1.12.1以下との下位互換性のために、NoteDataからidへのマッピングを生成します。 [Generate NoteData to id mappings for backwards compatiblity with <1.12.1]
-            foreach (var beatmapObjectData in this._beatmapData.allBeatmapDataItems.Where(x => x is NoteData || x is SliderData).OrderBy(x => x.time)) {
+            foreach (var beatmapObjectData in this._beatmapData.allBeatmapDataItems.Where(x => x is NoteData).OrderBy(x => x.time)) {
                 if (beatmapObjectData is NoteData noteData) {
                     //Logger.Debug($"\t{noteData.gameplayType.ToString()}\t{noteData.scoringType.ToString()}\t{noteData.cutDirection}\t{noteData.time}\t{noteData.lineIndex}\t{noteData.noteLineLayer}\t{noteData.colorType}");
                     var mapdata = this._gameStatus.MapDataGet();
@@ -624,6 +624,7 @@ namespace DataRecorder.Models
                     mapdata.noteLineLayer = noteData.noteLineLayer;
                     mapdata.colorType = noteData.colorType;
                     mapdata.cutDirection = noteData.cutDirection;
+                    mapdata.gameplayType = noteData.gameplayType;
                     this._gameStatus.MapDataIndexUp();
                 }
             }

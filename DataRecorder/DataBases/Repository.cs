@@ -458,7 +458,11 @@ namespace DataRecorder.DataBases
         private void DbInsertEvent()
         {
             while (true) {
-                if (this.playDataAddFlag) this.PlayDataAdd();
+                if (this.playDataAddFlag) {
+                    if (PluginConfig.Instance.DebugMode)
+                        DebugNoteId.Test(this._gameStatus);
+                    this.PlayDataAdd();
+                }
                 if (this.pauseEventAddFlag != null) this.PauseEventAdd(this.pauseEventAddFlag);
                 Thread.Sleep(10);
             }

@@ -28,5 +28,9 @@ namespace DataRecorder.Models
         /// ノーツのカット方向
         /// </summary>
         public NoteCutDirection cutDirection { get; set; } = NoteCutDirection.None;
+        /// <summary>
+        /// ノーツのゲームプレイタイプ
+        /// </summary>
+        public NoteData.GameplayType gameplayType { get; set; } = NoteData.GameplayType.Normal;
     }
 }

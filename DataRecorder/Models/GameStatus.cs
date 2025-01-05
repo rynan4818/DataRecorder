@@ -720,18 +720,40 @@ namespace DataRecorder.Models
         {
             // Backwards compatibility for <1.12.1
             int noteID = -1;
+            for (float elementDiffTime = 0.02f; elementDiffTime < 1f; elementDiffTime += 0.02f)
+            {
+                noteID = CHeckNoteId(noteID, elementDiffTime);
+                if (noteID != -1) break;
+            }
+            return noteID;
+        }
+        #endregion
+        #region // プライベートメソッド
+        /// <summary>
+        /// ノーツIDの検索
+        /// </summary>
+        /// <param name="noteID">ノーツID</param>
+        /// <param name="elementDiffTime">チェインノーツの時間差許容値</param>
+        /// <returns>ノーツID</returns>
+        private int CHeckNoteId(int noteID, float elementDiffTime = 0.1f)
+        {
             // Check the near notes first for performance
-            for (int i = Math.Max(0, this.lastNoteId - 10); i < this.mapEndIndex; i++) {
-                if (NoteDataEquals(this.mapDatas[i])) {
+            for (int i = Math.Max(0, this.lastNoteId - 10); i < this.mapEndIndex; i++)
+            {
+                if (NoteDataEquals(this.mapDatas[i], elementDiffTime))
+                {
                     noteID = i;
                     if (i > this.lastNoteId) this.lastNoteId = i;
                     break;
                 }
             }
             // If that failed, check the rest of the notes in reverse order
-            if (noteID == -1) {
-                for (int i = Math.Max(0, this.lastNoteId - 11); i >= 0; i--) {
-                    if (NoteDataEquals(this.mapDatas[i])) {
+            if (noteID == -1)
+            {
+                for (int i = Math.Max(0, this.lastNoteId - 11); i >= 0; i--)
+                {
+                    if (NoteDataEquals(this.mapDatas[i], elementDiffTime))
+                    {
                         noteID = i;
                         break;
                     }
@@ -739,8 +761,6 @@ namespace DataRecorder.Models
             }
             return noteID;
         }
-        #endregion
-        #region // プライベートメソッド
         /// <summary>
         /// ノーツ毎のスコア格納用配列をリセット
         /// </summary>
@@ -754,7 +774,7 @@ namespace DataRecorder.Models
                     this.noteScores[i].bs_event = BeatSaberEvent.Menu;
                     this.noteScores[i].time = 0;
                     this.noteScores[i].noteTime = 0;
-                    this.noteScores[i].scoringType = NoteData.ScoringType.Ignore;
+                    this.noteScores[i].gameplayType = NoteData.GameplayType.Normal;
                     this.noteScores[i].cutTime = null;
                     this.noteScores[i].rawScore = 0;
                     this.noteScores[i].score = 0;
@@ -839,9 +859,10 @@ namespace DataRecorder.Models
                 else {
                     this.mapDatas[i].time = 0;
                     this.mapDatas[i].lineIndex = 0;
-                    this.mapDatas[i].noteLineLayer = 0;
-                    this.mapDatas[i].colorType = 0;
-                    this.mapDatas[i].cutDirection = 0;
+                    this.mapDatas[i].noteLineLayer = NoteLineLayer.Base;
+                    this.mapDatas[i].colorType = ColorType.None;
+                    this.mapDatas[i].cutDirection = NoteCutDirection.None;
+                    this.mapDatas[i].gameplayType = NoteData.GameplayType.Normal;
                 }
             }
             this.mapIndex = 0;
@@ -876,13 +897,27 @@ namespace DataRecorder.Models
         /// <summary>
         /// 譜面データと現在のインデックスのノーツデータを比較(noteID取得用)
         /// </summary>
-        private bool NoteDataEquals(MapDataEntity a)
+        private bool NoteDataEquals(MapDataEntity checkNote, float elementDiffTime = 0.1f)
         {
-            return (this.noteScores[noteIndex].scoringType == NoteData.ScoringType.BurstSliderElement && this.noteScores[noteIndex].noteTime - a.time < 0.1f || a.time == this.noteScores[noteIndex].noteTime) &&
-                a.lineIndex == this.noteScores[noteIndex].noteLine &&
-                a.noteLineLayer == this.noteScores[noteIndex].noteLayer &&
-                a.colorType == this.noteScores[noteIndex].colorType &&
-                (this.modNoArrows || this.noteScores[noteIndex].scoringType == NoteData.ScoringType.BurstSliderElement || a.cutDirection == this.noteScores[noteIndex].noteCutDirection);
+            var nowNote = this.noteScores[noteIndex];
+            if (checkNote.colorType != nowNote.colorType)
+                return false;
+            if (nowNote.gameplayType == NoteData.GameplayType.BurstSliderElement)
+            {
+                if (checkNote.gameplayType != NoteData.GameplayType.BurstSliderHead)
+                    return false;
+                var diffNoteTime = nowNote.noteTime - checkNote.time;
+                if (diffNoteTime > elementDiffTime || diffNoteTime < 0)
+                    return false;
+            }
+            else
+            {
+                if (checkNote.gameplayType != nowNote.gameplayType || checkNote.time != nowNote.noteTime || checkNote.lineIndex != nowNote.noteLine || checkNote.noteLineLayer != nowNote.noteLayer)
+                    return false;
+                if (!this.modNoArrows && checkNote.cutDirection != nowNote.noteCutDirection)
+                    return false;
+            }
+            return true;
         }
         #endregion
     }

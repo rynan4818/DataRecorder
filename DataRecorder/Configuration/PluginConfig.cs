@@ -26,6 +26,11 @@ namespace DataRecorder.Configuration
         public virtual string DBFilePath { get; set; } = DefaultDBFilePath;
 
         /// <summary>
+        /// デバッグモード
+        /// </summary>
+        public virtual bool DebugMode { get; set; } = false;
+
+        /// <summary>
         /// This is called whenever BSIPA reads the config from disk (including when file changes are detected).
         /// </summary>
         public virtual void OnReload()
